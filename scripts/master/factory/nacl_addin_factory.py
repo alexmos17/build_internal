@@ -8,17 +8,17 @@ Based on gclient_factory.py."""
 
 import posixpath
 
-from master.factory import gclient_factory
-from master import chromium_step
+from main.factory import gclient_factory
+from main import chromium_step
 
 import config
 
 
 class NativeClientAddInFactory(gclient_factory.GClientFactory):
-  """Encapsulates data and methods common to the nacl.sdk master.cfg files."""
+  """Encapsulates data and methods common to the nacl.sdk main.cfg files."""
 
-  DEFAULT_TARGET_PLATFORM = config.Master.default_platform
-  CUSTOM_VARS_GOOGLECODE_URL = ('googlecode_url', config.Master.googlecode_url)
+  DEFAULT_TARGET_PLATFORM = config.Main.default_platform
+  CUSTOM_VARS_GOOGLECODE_URL = ('googlecode_url', config.Main.googlecode_url)
 
   # A map used to skip dependencies when a test is not run.
   # The map key is the test name. The map value is an array containing the
@@ -33,7 +33,7 @@ class NativeClientAddInFactory(gclient_factory.GClientFactory):
                branch='trunk'):
     solutions = []
     self.target_platform = target_platform
-    nacl_sdk_url = posixpath.join(config.Master.nacl_sdk_root_url,
+    nacl_sdk_url = posixpath.join(config.Main.nacl_sdk_root_url,
                                   branch, 'src')
     main = gclient_factory.GClientSolution(nacl_sdk_url)
     solutions.append(main)
@@ -44,7 +44,7 @@ class NativeClientAddInFactory(gclient_factory.GClientFactory):
 
   def NativeClientAddInFactory(self, target='Release', clobber=True,
                                tests=None, mode=None,
-                               slave_type='BuilderTester', options=None,
+                               subordinate_type='BuilderTester', options=None,
                                compile_timeout=1200, build_url=None,
                                factory_properties=None,
                                official_release=False):
@@ -62,7 +62,7 @@ class NativeClientAddInFactory(gclient_factory.GClientFactory):
       # Steps run using a separate copy of python.exe, so it can be killed at
       # the start of a build. But the kill_processes (taskkill) step has to use
       # the original python.exe, or it kills itself.
-      python = 'python_slave'
+      python = 'python_subordinate'
     else:
       python = 'python'
 
@@ -84,7 +84,7 @@ class NativeClientGameFactory(NativeClientAddInFactory):
                                       branch)
 
   def NativeClientGameFactory(self, target='Release', clobber=True, tests=None,
-                              mode=None, slave_type='BuilderTester',
+                              mode=None, subordinate_type='BuilderTester',
                               options=None, compile_timeout=1200,
                               build_url=None, factory_properties=None,
                               official_release=False):
@@ -102,7 +102,7 @@ class NativeClientGameFactory(NativeClientAddInFactory):
       # Steps run using a separate copy of python.exe, so it can be killed at
       # the start of a build. But the kill_processes (taskkill) step has to use
       # the original python.exe, or it kills itself.
-      python = 'python_slave'
+      python = 'python_subordinate'
     else:
       python = 'python'
 

@@ -12,7 +12,7 @@ def GenSteps(api):
   api.android.c.lunch_flavor = 'nakasi-userdebug'
   api.android.c.repo.url = (
     'https://android.googlesource.com/platform/manifest')
-  api.android.c.repo.branch = 'master'
+  api.android.c.repo.branch = 'main'
 
   spec = api.android.create_spec()
   api.android.sync_chromium(spec)
@@ -32,9 +32,9 @@ def GenSteps(api):
 
 def GenTests(api):
   yield api.test('basic') + api.properties(
-      mastername='chromium.linux',
+      mainname='chromium.linux',
       buildername='Android Builder',
-      slavename='totallyanandroid-m1',
+      subordinatename='totallyanandroid-m1',
       revision='123456',
   )
 

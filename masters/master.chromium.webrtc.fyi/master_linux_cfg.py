@@ -5,7 +5,7 @@
 from buildbot.scheduler import Periodic
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-from master.factory import annotator_factory
+from main.factory import annotator_factory
 
 m_annotator = annotator_factory.AnnotatorFactory()
 
@@ -28,11 +28,11 @@ def Update(c):
     {'name': 'Linux'},
     {
        'name': 'Linux GN',
-       'slavebuilddir': 'linux_gn',
+       'subordinatebuilddir': 'linux_gn',
     },
     {
       'name': 'Linux GN (dbg)',
-      'slavebuilddir': 'linux_gn',
+      'subordinatebuilddir': 'linux_gn',
     },
   ]
 
@@ -42,6 +42,6 @@ def Update(c):
         'factory': m_annotator.BaseFactory('webrtc/chromium'),
         'category': 'linux',
         'notify_on_missing': True,
-        'slavebuilddir': spec.get('slavebuilddir', 'linux'),
+        'subordinatebuilddir': spec.get('subordinatebuilddir', 'linux'),
       } for spec in specs
   ])

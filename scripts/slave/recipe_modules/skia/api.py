@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 
-from slave import recipe_api
-from slave import recipe_config_types
+from subordinate import recipe_api
+from subordinate import recipe_config_types
 from common.skia import builder_name_schema
 from common.skia import global_constants
 from . import android_flavor
@@ -66,26 +66,26 @@ class SkiaApi(recipe_api.RecipeApi):
     self.failed = []
     self.set_config('skia',
                     BUILDER_NAME=self.m.properties['buildername'],
-                    MASTER_NAME=self.m.properties['mastername'],
-                    SLAVE_NAME=self.m.properties['slavename'])
+                    MASTER_NAME=self.m.properties['mainname'],
+                    SLAVE_NAME=self.m.properties['subordinatename'])
     self._set_flavor()
 
     # self.got_revision will be set in checkout_steps.
     self.got_revision = None
 
     # Set some important paths.
-    slave_dir = self.m.path['slave_build']
-    skia_dir = slave_dir.join('skia')
+    subordinate_dir = self.m.path['subordinate_build']
+    skia_dir = subordinate_dir.join('skia')
     self.perf_data_dir = None
     if self.c.role == builder_name_schema.BUILDER_ROLE_PERF:
-      self.perf_data_dir = slave_dir.join('perfdata', self.c.BUILDER_NAME,
+      self.perf_data_dir = subordinate_dir.join('perfdata', self.c.BUILDER_NAME,
                                           'data')
     self.resource_dir = skia_dir.join('resources')
     self.skimage_expected_dir = skia_dir.join('expectations', 'skimage')
-    self.skimage_in_dir = slave_dir.join('skimage_in')
-    self.skimage_out_dir = slave_dir.join('skimage_out')
+    self.skimage_in_dir = subordinate_dir.join('skimage_in')
+    self.skimage_out_dir = subordinate_dir.join('skimage_out')
     self.local_skp_dirs = default_flavor.SKPDirs(
-        str(slave_dir.join('playback')),
+        str(subordinate_dir.join('playback')),
         self.c.BUILDER_NAME, self.m.path.sep)
     self.storage_skp_dirs = default_flavor.SKPDirs(
         'playback', self.c.BUILDER_NAME, '/')
@@ -209,7 +209,7 @@ class SkiaApi(recipe_api.RecipeApi):
     """Run the Skia GM test."""
     # Setup
     self.flavor.create_clean_device_dir(self.device_dirs.gm_actual_dir)
-    host_gm_actual_dir = self.m.path['slave_build'].join('gm', 'actual',
+    host_gm_actual_dir = self.m.path['subordinate_build'].join('gm', 'actual',
                                                          self.c.BUILDER_NAME)
     self.flavor.create_clean_host_dir(host_gm_actual_dir)
 

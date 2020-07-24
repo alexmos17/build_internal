@@ -18,12 +18,12 @@ from buildbot.steps import trigger
 
 from common import chromium_utils
 
-from master.factory import v8_factory
-from master.factory import chromium_factory
-from master.factory.dart import dart_commands
-from master.factory.dart.channels import CHANNELS, CHANNELS_BY_NAME
-from master.factory import gclient_factory
-from master import master_utils
+from main.factory import v8_factory
+from main.factory import chromium_factory
+from main.factory.dart import dart_commands
+from main.factory.dart.channels import CHANNELS, CHANNELS_BY_NAME
+from main.factory import gclient_factory
+from main import main_utils
 
 import config
 
@@ -33,10 +33,10 @@ android_resources_rev = '@3855'
 
 chromium_git = 'http://git.chromium.org/git/'
 
-dartium_url = config.Master.dart_bleeding + '/deps/dartium.deps'
+dartium_url = config.Main.dart_bleeding + '/deps/dartium.deps'
 android_tools_url = chromium_git + 'android_tools.git' + android_tools_rev
-if config.Master.v8_internal_url:
-  android_resources_url = (config.Master.v8_internal_url +
+if config.Main.v8_internal_url:
+  android_resources_url = (config.Main.v8_internal_url +
       '/buildbot_deps/android_testing_resources' + android_resources_rev )
 else:
   android_resources_url = None
@@ -56,11 +56,11 @@ dart2dart_backend_env = {'BUILDBOT_JAVA_HOME': 'third_party/java/linux/j2sdk',
 dart_revision_url = "http://code.google.com/p/dart/source/detail?r=%s"
 
 # gclient custom vars
-CUSTOM_VARS_SOURCEFORGE_URL = ('sourceforge_url', config.Master.sourceforge_url)
-CUSTOM_VARS_GOOGLECODE_URL = ('googlecode_url', config.Master.googlecode_url)
+CUSTOM_VARS_SOURCEFORGE_URL = ('sourceforge_url', config.Main.sourceforge_url)
+CUSTOM_VARS_GOOGLECODE_URL = ('googlecode_url', config.Main.googlecode_url)
 CUSTOM_VARS_CHROMIUM_URL = (
-  'chromium_url', config.Master.server_url + config.Master.repo_root)
-CUSTOM_VARS_DARTIUM_BASE = ('dartium_base', config.Master.server_url)
+  'chromium_url', config.Main.server_url + config.Main.repo_root)
+CUSTOM_VARS_DARTIUM_BASE = ('dartium_base', config.Main.server_url)
 
 custom_vars_list = [CUSTOM_VARS_SOURCEFORGE_URL,
                     CUSTOM_VARS_GOOGLECODE_URL,
@@ -68,17 +68,17 @@ custom_vars_list = [CUSTOM_VARS_SOURCEFORGE_URL,
                     CUSTOM_VARS_DARTIUM_BASE]
 
 # gclient custom deps
-if config.Master.trunk_internal_url:
+if config.Main.trunk_internal_url:
   CUSTOM_DEPS_WIN7_SDK = (
     "src/third_party/platformsdk_win7",
-    config.Master.trunk_internal_url + "/third_party/platformsdk_win7@23175")
+    config.Main.trunk_internal_url + "/third_party/platformsdk_win7@23175")
   CUSTOM_DEPS_WIN8_SDK = (
     "src/third_party/platformsdk_win8",
-    config.Master.trunk_internal_url
+    config.Main.trunk_internal_url
     + "/third_party/platformsdk_win8_9200@32005")
   CUSTOM_DEPS_DIRECTX_SDK = (
     "src/third_party/directxsdk",
-    config.Master.trunk_internal_url + "/third_party/directxsdk@20250")
+    config.Main.trunk_internal_url + "/third_party/directxsdk@20250")
   custom_deps_list_win = [CUSTOM_DEPS_WIN7_SDK,
                           CUSTOM_DEPS_WIN8_SDK,
                           CUSTOM_DEPS_DIRECTX_SDK]
@@ -86,10 +86,10 @@ else:
   custom_deps_list_win = []
 
 # Wix custom deps
-if config.Master.trunk_internal_url:
+if config.Main.trunk_internal_url:
   custom_wix_deps = [(
     'dart/third_party/wix',
-    config.Master.trunk_internal_url + "/third_party/wix/v3_6_3303")]
+    config.Main.trunk_internal_url + "/third_party/wix/v3_6_3303")]
 else:
   custom_wix_deps = []
 
@@ -127,9 +127,9 @@ def BuildChromiumFactory(channel, target_platform='win32'):
 
   # 'channel.dartium_deps_path' can be for example:
   #   "/branches/bleeding_edge/deps/dartium.deps"
-  # config.Master.dart_url will be the base svn url. It will point to the
+  # config.Main.dart_url will be the base svn url. It will point to the
   # mirror if we're in golo and otherwise to the googlecode location.
-  dartium_deps_url = config.Master.dart_url + channel.dartium_deps_path
+  dartium_deps_url = config.Main.dart_url + channel.dartium_deps_path
 
   factory = DartiumFactory(target_platform)
   if target_platform == 'win32':
@@ -165,9 +165,9 @@ def AddGeneralGClientProperties(factory_properties):
   factory_properties['no_gclient_branch'] = True
 
 class DartFactory(gclient_factory.GClientFactory):
-  """Encapsulates data and methods common to the dart master.cfg files."""
+  """Encapsulates data and methods common to the dart main.cfg files."""
 
-  DEFAULT_TARGET_PLATFORM = config.Master.default_platform
+  DEFAULT_TARGET_PLATFORM = config.Main.default_platform
 
   # A map used to skip dependencies when a test is not run.
   # The map key is the test name. The map value is an array containing the
@@ -178,13 +178,13 @@ class DartFactory(gclient_factory.GClientFactory):
   NEEDED_COMPONENTS_INTERNAL = {
   }
 
-  if config.Master.trunk_internal_url:
+  if config.Main.trunk_internal_url:
     CUSTOM_DEPS_JAVA = ('dart/third_party/java',
-                        config.Master.trunk_internal_url +
+                        config.Main.trunk_internal_url +
                         '/third_party/openjdk')
     # Fix broken ubuntu OpenJDK by importing windows TZ files
     CUSTOM_TZ = ('dart/third_party/java/linux/j2sdk/jre/lib/zi',
-                 config.Master.trunk_internal_url +
+                 config.Main.trunk_internal_url +
                  '/third_party/openjdk/windows/j2sdk/jre/lib/zi')
 
   def __init__(self, channel=None, build_dir='dart', target_platform='posix',
@@ -200,17 +200,17 @@ class DartFactory(gclient_factory.GClientFactory):
 
     # 'channel.all_deps_path' can be for example:
     #   "/branches/bleeding_edge/deps/all.deps"
-    # config.Master.dart_url will be the base svn url. It will point to the
+    # config.Main.dart_url will be the base svn url. It will point to the
     # mirror if we're in golo and otherwise to the googlecode location.
     if is_standalone:
-      deps_url = config.Master.dart_url + self.channel.standalone_deps_path
+      deps_url = config.Main.dart_url + self.channel.standalone_deps_path
     else:
-      deps_url = config.Master.dart_url + self.channel.all_deps_path
+      deps_url = config.Main.dart_url + self.channel.all_deps_path
 
     if not custom_deps_list:
       custom_deps_list = []
 
-    if config.Master.trunk_internal_url:
+    if config.Main.trunk_internal_url:
       custom_deps_list.append(self.CUSTOM_DEPS_JAVA)
       custom_deps_list.append(self.CUSTOM_TZ)
 
@@ -227,7 +227,7 @@ class DartFactory(gclient_factory.GClientFactory):
                                             nohooks_on_update=nohooks_on_update)
 
   def DartFactory(self, target='Release', clobber=False, tests=None,
-                  slave_type='BuilderTester', options=None,
+                  subordinate_type='BuilderTester', options=None,
                   compile_timeout=1200, build_url=None,
                   factory_properties=None, env=None, triggers=()):
     factory_properties = factory_properties or {}
@@ -247,21 +247,21 @@ class DartFactory(gclient_factory.GClientFactory):
     dart_cmd_obj.AddKillStep(step_name="Taskkill before running")
 
     # We must always add the MaybeClobberStep, since this factory is
-    # created at master start, but the choice of clobber or not may be
+    # created at main start, but the choice of clobber or not may be
     # chosen at runtime (e.g. check the 'clobber' box).
     dart_cmd_obj.AddMaybeClobberStep(clobber, options=options)
 
     # Add the compile step if needed.
-    if slave_type in ['BuilderTester', 'Builder', 'Trybot']:
+    if subordinate_type in ['BuilderTester', 'Builder', 'Trybot']:
       dart_cmd_obj.AddCompileStep(options=options,
                                   timeout=compile_timeout)
 
     # Add all the tests.
-    if slave_type in ['BuilderTester', 'Trybot', 'Tester']:
+    if subordinate_type in ['BuilderTester', 'Trybot', 'Tester']:
       dart_cmd_obj.AddTests(options=options, channel=self.channel)
 
      # Archive crash dumps
-    if slave_type in ['BuilderTester', 'Trybot', 'Tester']:
+    if subordinate_type in ['BuilderTester', 'Trybot', 'Tester']:
       # Currently we only do this on bleeding since scripts have not landed
       # on trunk/stable yet.
       if self.channel.name == 'be':
@@ -472,8 +472,8 @@ class DartUtils(object):
   factory_base = {}
   factory_base_dartium = {}
 
-  def __init__(self, active_master):
-    self._active_master = active_master
+  def __init__(self, active_main):
+    self._active_main = active_main
 
     for channel in CHANNELS:
       DartUtils.factory_base.update(DartUtils.get_factory_base(channel))
@@ -490,7 +490,7 @@ class DartUtils(object):
                                                          1,
                                                          1200,
                                                          48*60*60, {},
-                                                         'slave-config',
+                                                         'subordinate-config',
                                                          True)
 
   @staticmethod
@@ -508,8 +508,8 @@ class DartUtils(object):
       else:
         return None
 
-    # Polls config.Master.dart_url for changes
-    return svnpoller.SVNPoller(svnurl=config.Master.dart_url,
+    # Polls config.Main.dart_url for changes
+    return svnpoller.SVNPoller(svnurl=config.Main.dart_url,
                                svnbin=chromium_utils.SVN_BIN,
                                split_file=dart_tree_file_splitter,
                                pollinterval=10,
@@ -536,7 +536,7 @@ class DartUtils(object):
     return DartUtils.get_git_poller(repo, name, revlink)
 
   @staticmethod
-  def prioritize_builders(buildmaster, builders):
+  def prioritize_builders(buildmain, builders):
     def get_priority(name):
       for channel in CHANNELS:
         if name.endswith(channel.builder_postfix):
@@ -581,7 +581,7 @@ class DartUtils(object):
           options['shards'] = v['shards']
           options['shard'] = v['shard']
         v['factory_builder'] = base.DartFactory(
-            slave_type='BuilderTester',
+            subordinate_type='BuilderTester',
             clobber=False,
             options=options,
             env=env,
@@ -671,11 +671,11 @@ class DartUtils(object):
       variant['factory_builder'] = self.factory_base_dartium[name]
 
   def get_web_statuses(self, order_console_by_time=False):
-    public_html = '../master.chromium/public_html'
-    templates = ['../master.client.dart/templates',
-                 '../master.chromium/templates']
-    master_port = self._active_master.master_port
-    master_port_alt = self._active_master.master_port_alt
+    public_html = '../main.chromium/public_html'
+    templates = ['../main.client.dart/templates',
+                 '../main.chromium/templates']
+    main_port = self._active_main.main_port
+    main_port_alt = self._active_main.main_port_alt
     kwargs = {
       'public_html' : public_html,
       'templates' : templates,
@@ -683,22 +683,22 @@ class DartUtils(object):
     }
 
     statuses = []
-    statuses.append(master_utils.CreateWebStatus(master_port,
+    statuses.append(main_utils.CreateWebStatus(main_port,
                                                  allowForce=True,
                                                  **kwargs))
     statuses.append(
-        master_utils.CreateWebStatus(master_port_alt, allowForce=False,
+        main_utils.CreateWebStatus(main_port_alt, allowForce=False,
                                      **kwargs))
 
-    http_status_push_url = self._active_master.http_status_push_url
-    if self._active_master.is_production_host and http_status_push_url:
+    http_status_push_url = self._active_main.http_status_push_url
+    if self._active_main.is_production_host and http_status_push_url:
       statuses.append(HttpStatusPush(serverUrl=http_status_push_url))
     return statuses
 
   @staticmethod
   def get_builders_from_variants(variants,
-                                 slaves,
-                                 slave_locks,
+                                 subordinates,
+                                 subordinate_locks,
                                  auto_reboot = False):
     builders = []
     for v in variants:
@@ -706,9 +706,9 @@ class DartUtils(object):
          'name': v['name'],
          'builddir': v.get('builddir', v['name']),
          'factory': v['factory_builder'],
-         'slavenames': slaves.GetSlavesName(builder=v['name']),
+         'subordinatenames': subordinates.GetSubordinatesName(builder=v['name']),
          'category': v['category'],
-         'locks': slave_locks,
+         'locks': subordinate_locks,
          'auto_reboot': auto_reboot}
       if 'merge_requests' in v:
         builder['mergeRequests'] = v['merge_requests']
@@ -720,11 +720,11 @@ class DartUtils(object):
     return [variant['name'] for variant in variants]
 
   @staticmethod
-  def get_slaves(builders):
-    # The 'slaves' list defines the set of allowable buildslaves. List all the
-    # slaves registered to a builder. Remove dupes.
-    return master_utils.AutoSetupSlaves(builders,
-                                        config.Master.GetBotPassword())
+  def get_subordinates(builders):
+    # The 'subordinates' list defines the set of allowable buildsubordinates. List all the
+    # subordinates registered to a builder. Remove dupes.
+    return main_utils.AutoSetupSubordinates(builders,
+                                        config.Main.GetBotPassword())
 
   def get_mail_notifier_statuses(self, mail_notifiers):
     statuses = []
@@ -736,19 +736,19 @@ class DartUtils(object):
       subject = mail_notifier.get('subject')
       if subject:
         statuses.append(
-            MailNotifier(fromaddr=self._active_master.from_address,
+            MailNotifier(fromaddr=self._active_main.from_address,
                          mode='problem',
                          subject=subject,
                          sendToInterestedUsers=send_to_interested_useres,
                          extraRecipients=extra_recipients,
-                         lookup=master_utils.FilterDomain(),
+                         lookup=main_utils.FilterDomain(),
                          builders=notifying_builders))
       else:
         statuses.append(
-            MailNotifier(fromaddr=self._active_master.from_address,
+            MailNotifier(fromaddr=self._active_main.from_address,
                          mode='problem',
                          sendToInterestedUsers=send_to_interested_useres,
                          extraRecipients=extra_recipients,
-                         lookup=master_utils.FilterDomain(),
+                         lookup=main_utils.FilterDomain(),
                          builders=notifying_builders))
     return statuses

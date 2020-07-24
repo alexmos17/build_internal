@@ -20,7 +20,7 @@ def GenSteps(api):
   api.step.auto_resolve_conflicts = True
 
   # Paths and other constants
-  build_root = api.path['slave_build']
+  build_root = api.path['subordinate_build']
 
   # libvpx paths
   libvpx_git_url = api.properties['libvpx_git_url']

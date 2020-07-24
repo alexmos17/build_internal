@@ -47,20 +47,20 @@ class AndroidFlavorUtils(default_flavor.DefaultFlavorUtils):
     super(AndroidFlavorUtils, self).__init__(skia_api)
     self.device = device_from_builder_dict(self._skia_api.c.builder_cfg)
     self._serial = None  # Get this lazily.
-    self.android_bin = self._skia_api.m.path['slave_build'].join(
+    self.android_bin = self._skia_api.m.path['subordinate_build'].join(
         'skia', 'platform_tools', 'android', 'bin')
 
   @property
   def serial(self):
     if not self._serial:
-      serial = self._skia_api.c.slave_cfg.get('serial')
+      serial = self._skia_api.c.subordinate_cfg.get('serial')
       self._skia_api.m.adb.list_devices()
       attached_devices = self._skia_api.m.adb.devices
       if not serial:
         if len(attached_devices) == 1:
           serial = attached_devices[0]
         else:
-          raise Exception('No serial number specified in slaves.cfg and %d '
+          raise Exception('No serial number specified in subordinates.cfg and %d '
                           'devices attached; unable to determine which serial '
                           'number to use.' % len(attached_devices))
       if serial not in attached_devices:

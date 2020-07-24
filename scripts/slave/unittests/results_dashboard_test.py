@@ -17,8 +17,8 @@ import urllib2
 
 import test_env  # pylint: disable=W0403,W0611
 
-from slave import results_dashboard
-from slave import slave_utils
+from subordinate import results_dashboard
+from subordinate import subordinate_utils
 from testing_support.super_mox import mox
 
 
@@ -42,10 +42,10 @@ class ResultsDashboardFormatTest(unittest.TestCase):
   def test_MakeListOfPoints_MinimalCase(self):
     """A very simple test of a call to MakeListOfPoints."""
 
-    # The master name is gotten when making the list of points,
+    # The main name is gotten when making the list of points,
     # so it must be stubbed out here.
-    self.mox.StubOutWithMock(slave_utils, 'GetActiveMaster')
-    slave_utils.GetActiveMaster().AndReturn('MyMaster')
+    self.mox.StubOutWithMock(subordinate_utils, 'GetActiveMain')
+    subordinate_utils.GetActiveMain().AndReturn('MyMain')
     self.mox.ReplayAll()
 
     actual_points = results_dashboard.MakeListOfPoints(
@@ -55,16 +55,16 @@ class ResultsDashboardFormatTest(unittest.TestCase):
                 'rev': '12345',
             }
         },
-        'my-bot', 'foo_test', 'my.master', 'Builder', 10, {})
+        'my-bot', 'foo_test', 'my.main', 'Builder', 10, {})
     expected_points = [
         {
-            'master': 'MyMaster',
+            'main': 'MyMain',
             'bot': 'my-bot',
             'test': 'foo_test/bar/baz',
             'revision': 12345,
             'value': '100.0',
             'error': '5.0',
-            'masterid': 'my.master',
+            'mainid': 'my.main',
             'buildername': 'Builder',
             'buildnumber': 10,
             'supplemental_columns': {},
@@ -74,10 +74,10 @@ class ResultsDashboardFormatTest(unittest.TestCase):
 
   def test_MakeListOfPoints_GeneralCase(self):
     """A test of making a list of points, including all optional data."""
-    # The master name is gotten when making the list of points,
+    # The main name is gotten when making the list of points,
     # so it must be stubbed out here.
-    self.mox.StubOutWithMock(slave_utils, 'GetActiveMaster')
-    slave_utils.GetActiveMaster().AndReturn('MyMaster')
+    self.mox.StubOutWithMock(subordinate_utils, 'GetActiveMain')
+    subordinate_utils.GetActiveMain().AndReturn('MyMain')
     self.mox.ReplayAll()
 
     actual_points = results_dashboard.MakeListOfPoints(
@@ -104,7 +104,7 @@ class ResultsDashboardFormatTest(unittest.TestCase):
                 'units': 'count',
             },
         },
-        'my-bot', 'foo_test', 'my.master', 'Builder', 10,
+        'my-bot', 'foo_test', 'my.main', 'Builder', 10,
         {
             'r_bar': '89abcdef',
             'a_stdio_uri': 'http://mylogs.com/Builder/10',
@@ -112,14 +112,14 @@ class ResultsDashboardFormatTest(unittest.TestCase):
         })
     expected_points = [
         {
-            'master': 'MyMaster',
+            'main': 'MyMain',
             'bot': 'my-bot',
             'test': 'foo_test/bar', # Note that trace name is omitted.
             'revision': 12345,
             'value': '100.0',
             'error': '5.0',
             'units': 'KB',
-            'masterid': 'my.master',
+            'mainid': 'my.main',
             'buildername': 'Builder',
             'buildnumber': 10,
             'supplemental_columns': {
@@ -131,14 +131,14 @@ class ResultsDashboardFormatTest(unittest.TestCase):
             },
         },
         {
-            'master': 'MyMaster',
+            'main': 'MyMain',
             'bot': 'my-bot',
             'test': 'foo_test/bar/ref',  # Note the change in trace name.
             'revision': 12345,
             'value': '98.5',
             'error': '5.0',
             'units': 'KB',
-            'masterid': 'my.master',
+            'mainid': 'my.main',
             'buildername': 'Builder',
             'buildnumber': 10,
             'supplemental_columns': {
@@ -149,7 +149,7 @@ class ResultsDashboardFormatTest(unittest.TestCase):
             },
         },
         {
-            'master': 'MyMaster',
+            'main': 'MyMain',
             'bot': 'my-bot',
             'test': 'foo_test/x/y',
             'revision': 23456,
@@ -157,7 +157,7 @@ class ResultsDashboardFormatTest(unittest.TestCase):
             'error': 0,
             'units': 'count',
             'important': True,
-            'masterid': 'my.master',
+            'mainid': 'my.main',
             'buildername': 'Builder',
             'buildnumber': 10,
             'supplemental_columns': {
@@ -174,8 +174,8 @@ class ResultsDashboardFormatTest(unittest.TestCase):
     """Tests sending data with a git hash as "revision"."""
     self.mox.StubOutWithMock(datetime, 'datetime')
     datetime.datetime.utcnow().AndReturn(FakeDateTime())
-    self.mox.StubOutWithMock(slave_utils, 'GetActiveMaster')
-    slave_utils.GetActiveMaster().AndReturn('ChromiumPerf')
+    self.mox.StubOutWithMock(subordinate_utils, 'GetActiveMain')
+    subordinate_utils.GetActiveMain().AndReturn('ChromiumPerf')
     self.mox.ReplayAll()
 
     actual_points = results_dashboard.MakeListOfPoints(
@@ -188,14 +188,14 @@ class ResultsDashboardFormatTest(unittest.TestCase):
         'my-bot', 'foo_test', 'chromium.perf', 'Builder', 10, {})
     expected_points = [
         {
-            'master': 'ChromiumPerf',
+            'main': 'ChromiumPerf',
             'bot': 'my-bot',
             'test': 'foo_test/bar/baz',
             # Corresponding timestamp for the fake datetime is used.
             'revision': 1375315200,
             'value': '100.0',
             'error': '5.0',
-            'masterid': 'chromium.perf',
+            'mainid': 'chromium.perf',
             'buildername': 'Builder',
             'buildnumber': 10,
             'supplemental_columns': {
@@ -206,11 +206,11 @@ class ResultsDashboardFormatTest(unittest.TestCase):
     self.assertEqual(expected_points, actual_points)
 
   def test_BlinkUsesTimestamp(self):
-    """Tests that timestamp is used for "revision" for ChromiumWebkit master."""
+    """Tests that timestamp is used for "revision" for ChromiumWebkit main."""
     self.mox.StubOutWithMock(datetime, 'datetime')
     datetime.datetime.utcnow().AndReturn(FakeDateTime())
-    self.mox.StubOutWithMock(slave_utils, 'GetActiveMaster')
-    slave_utils.GetActiveMaster().AndReturn('ChromiumWebkit')
+    self.mox.StubOutWithMock(subordinate_utils, 'GetActiveMain')
+    subordinate_utils.GetActiveMain().AndReturn('ChromiumWebkit')
     self.mox.ReplayAll()
 
     actual_points = results_dashboard.MakeListOfPoints(
@@ -224,13 +224,13 @@ class ResultsDashboardFormatTest(unittest.TestCase):
         'my-bot', 'foo_test', 'chromium.webkit', 'Builder', 10, {})
     expected_points = [
         {
-            'master': 'ChromiumWebkit',
+            'main': 'ChromiumWebkit',
             'bot': 'my-bot',
             'test': 'foo_test/bar/baz',
             'revision': 1375315200,
             'value': '100.0',
             'error': '5.0',
-            'masterid': 'chromium.webkit',
+            'mainid': 'chromium.webkit',
             'buildername': 'Builder',
             'buildnumber': 10,
             'supplemental_columns': {
@@ -336,11 +336,11 @@ class ResultsDashboardTest(unittest.TestCase):
     self.assertEqual(
         ('@@@STEP_LINK@Results Dashboard@'
          'https://chromeperf.appspot.com/report'
-         '?masters=MyMaster&bots=b&tests=sunspider&rev=1234@@@'),
+         '?mains=MyMain&bots=b&tests=sunspider&rev=1234@@@'),
         results_dashboard._LinkAnnotation(
             'https://chromeperf.appspot.com',
             [{
-                'master': 'MyMaster',
+                'main': 'MyMain',
                 'bot': 'b',
                 'test': 'sunspider/Total',
                 'revision': 1234,

@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 class BuildbotApi(recipe_api.RecipeApi):
   def prep(self):
@@ -10,7 +10,7 @@ class BuildbotApi(recipe_api.RecipeApi):
     # TODO(iannucci): Also do taskkill?
     self.m.python(
       'cleanup temp',
-      self.m.path['build'].join('scripts', 'slave', 'cleanup_temp.py')
+      self.m.path['build'].join('scripts', 'subordinate', 'cleanup_temp.py')
     )
 
   def copy_parent_got_revision_to_got_revision(self):

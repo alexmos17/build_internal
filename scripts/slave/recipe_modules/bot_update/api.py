@@ -6,11 +6,11 @@
 """Recipe module to ensure a checkout is consistant on a bot."""
 
 
-from slave import recipe_api
-from slave import recipe_util
+from subordinate import recipe_api
+from subordinate import recipe_util
 
 
-# This is just for testing, to indicate if a master is using a Git scheduler
+# This is just for testing, to indicate if a main is using a Git scheduler
 # or not.
 GIT_MASTERS = ['chromium.git']
 
@@ -56,7 +56,7 @@ class BotUpdateApi(recipe_api.RecipeApi):
     """Wrapper for easy calling of bot_update."""
     assert isinstance(cmd, (list, tuple))
     bot_update_path = self.m.path['build'].join(
-        'scripts', 'slave', 'bot_update.py')
+        'scripts', 'subordinate', 'bot_update.py')
     kwargs.setdefault('infra_step', True)
     return self.m.python(name, bot_update_path, cmd, **kwargs)
 
@@ -75,9 +75,9 @@ class BotUpdateApi(recipe_api.RecipeApi):
     spec_string = jsonish_to_python(cfg.as_jsonish(), True)
 
     # Used by bot_update to determine if we want to run or not.
-    master = self.m.properties['mastername']
+    main = self.m.properties['mainname']
     builder = self.m.properties['buildername']
-    slave = self.m.properties['slavename']
+    subordinate = self.m.properties['subordinatename']
 
     # Construct our bot_update command.  This basically be inclusive of
     # everything required for bot_update to know:
@@ -104,10 +104,10 @@ class BotUpdateApi(recipe_api.RecipeApi):
       rev_map = self.m.gclient.c.got_revision_mapping.as_jsonish()
 
     flags = [
-        # 1. Do we want to run? (master/builder/slave).
-        ['--master', master],
+        # 1. Do we want to run? (main/builder/subordinate).
+        ['--main', main],
         ['--builder', builder],
-        ['--slave', slave],
+        ['--subordinate', subordinate],
 
         # 2. What do we want to check out (spec/root/rev/rev_map).
         ['--spec', spec_string],
@@ -151,10 +151,10 @@ class BotUpdateApi(recipe_api.RecipeApi):
       cmd.append('--with_branch_heads')
 
     # Inject Json output for testing.
-    git_mode = self.m.properties.get('mastername') in GIT_MASTERS
+    git_mode = self.m.properties.get('mainname') in GIT_MASTERS
     first_sln = cfg.solutions[0].name
     step_test_data = lambda: self.test_api.output_json(
-        master, builder, slave, root, first_sln, rev_map, git_mode, force,
+        main, builder, subordinate, root, first_sln, rev_map, git_mode, force,
         self.m.properties.get('fail_patch', False))
 
     # Add suffixes to the step name, if specified.
@@ -201,7 +201,7 @@ class BotUpdateApi(recipe_api.RecipeApi):
       # first solution.
       if step_result.json.output['did_run']:
         co_root = step_result.json.output['root']
-        cwd = kwargs.get('cwd', self.m.path['slave_build'])
+        cwd = kwargs.get('cwd', self.m.path['subordinate_build'])
         self.m.path['checkout'] = cwd.join(*co_root.split(self.m.path.sep))
 
     return step_result

@@ -9,8 +9,8 @@ This is based on commands.py and adds Syzygy-specific commands."""
 from buildbot.process.properties import WithProperties
 from buildbot.steps import shell
 
-from master import chromium_step
-from master.factory import commands
+from main import chromium_step
+from main.factory import commands
 
 class _UrlStatusCommand(shell.ShellCommand):
   """A ShellCommand subclass that adorns its build status with a URL on success.

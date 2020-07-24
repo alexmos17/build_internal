@@ -2,17 +2,17 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
 
-class SkiaAndroid(Master.Master3):
+class SkiaAndroid(Main.Main3):
   project_name = 'SkiaAndroid'
-  master_port = 8096
-  slave_port = 8196
-  master_port_alt = 8296
+  main_port = 8096
+  subordinate_port = 8196
+  main_port_alt = 8296
   repo_url = 'https://skia.googlesource.com/skia.git'
   buildbot_url = 'http://build.chromium.org/p/client.skia.android/'
   code_review_site = 'https://codereview.chromium.org'

@@ -5,7 +5,7 @@
 
 """A tool used to run a Chrome test executable and process the output.
 
-This script is used by the buildbot slaves. It must be run from the outer
+This script is used by the buildbot subordinates. It must be run from the outer
 build directory, e.g. chrome-release/build/.
 
 For a list of command-line options, call this script with '--help'.
@@ -47,14 +47,14 @@ from common import gtest_utils
 # TODO(crbug.com/403564). We almost certainly shouldn't be importing this.
 import config
 
-from slave import annotation_utils
-from slave import build_directory
-from slave import crash_utils
-from slave import gtest_slave_utils
-from slave import performance_log_processor
-from slave import results_dashboard
-from slave import slave_utils
-from slave import xvfb
+from subordinate import annotation_utils
+from subordinate import build_directory
+from subordinate import crash_utils
+from subordinate import gtest_subordinate_utils
+from subordinate import performance_log_processor
+from subordinate import results_dashboard
+from subordinate import subordinate_utils
+from subordinate import xvfb
 
 USAGE = '%s [options] test.exe [test args]' % os.path.basename(sys.argv[0])
 
@@ -71,8 +71,8 @@ HTTPD_CONF = {
 }
 # Regex matching git comment lines containing svn revision info.
 GIT_SVN_ID_RE = re.compile('^git-svn-id: .*@([0-9]+) .*$')
-# Regex for the master branch commit position.
-GIT_CR_POS_RE = re.compile('^Cr-Commit-Position: refs/heads/master@{#(\d+)}$')
+# Regex for the main branch commit position.
+GIT_CR_POS_RE = re.compile('^Cr-Commit-Position: refs/heads/main@{#(\d+)}$')
 
 # The directory that this script is in.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -85,7 +85,7 @@ LOG_PROCESSOR_CLASSES = {
 
 
 def _ShouldEnableSandbox(sandbox_path):
-  """Checks whether the current slave should use the sandbox.
+  """Checks whether the current subordinate should use the sandbox.
 
   This is based on should_enable_sandbox in src/testing/test_env.py.
 
@@ -93,7 +93,7 @@ def _ShouldEnableSandbox(sandbox_path):
     sandbox_path: Path to sandbox file.
 
   Returns:
-    True iff the slave is a Linux host with the sandbox file both present and
+    True iff the subordinate is a Linux host with the sandbox file both present and
     configured correctly.
   """
   if not (sys.platform.startswith('linux') and
@@ -205,14 +205,14 @@ def _RunGTestCommand(command, extra_env, log_processor=None, pipes=None):
     return chromium_utils.RunCommand(command, pipes=pipes, env=env)
 
 
-def _GetMaster():
-  """Returns a master name as listed in the slaves.cfg file."""
-  return slave_utils.GetActiveMaster()
+def _GetMain():
+  """Returns a main name as listed in the subordinates.cfg file."""
+  return subordinate_utils.GetActiveMain()
 
 
-def _GetMasterString(master):
-  """Returns a message describing what the master is."""
-  return '[Running for master: "%s"]' % master
+def _GetMainString(main):
+  """Returns a message describing what the main is."""
+  return '[Running for main: "%s"]' % main
 
 
 def _GetGitCommitPositionFromLog(log):
@@ -326,7 +326,7 @@ def _GenerateJSONForTestResults(options, log_processor):
   try:
     if (os.path.exists(options.test_output_xml) and
         not _UsingGtestJson(options)):
-      results_map = gtest_slave_utils.GetResultsMapFromXML(
+      results_map = gtest_subordinate_utils.GetResultsMapFromXML(
           options.test_output_xml)
     else:
       if _UsingGtestJson(options):
@@ -337,7 +337,7 @@ def _GenerateJSONForTestResults(options, log_processor):
              'using log output.\n') % (os.getcwd(), options.test_output_xml))
       # The file did not get generated. See if we can generate a results map
       # from the log output.
-      results_map = gtest_slave_utils.GetResultsMap(log_processor)
+      results_map = gtest_subordinate_utils.GetResultsMap(log_processor)
   except Exception as e:
     # This error will be caught by the following 'not results_map' statement.
     print 'Error: ', e
@@ -348,17 +348,17 @@ def _GenerateJSONForTestResults(options, log_processor):
     return True
 
   build_dir = os.path.abspath(options.build_dir)
-  slave_name = slave_utils.SlaveBuildName(build_dir)
+  subordinate_name = subordinate_utils.SubordinateBuildName(build_dir)
 
   generate_json_options = copy.copy(options)
-  generate_json_options.build_name = slave_name
+  generate_json_options.build_name = subordinate_name
   generate_json_options.input_results_xml = options.test_output_xml
   generate_json_options.builder_base_url = '%s/%s/%s/%s' % (
-      config.Master.archive_url, DEST_DIR, slave_name, options.test_type)
-  generate_json_options.master_name = options.master_class_name or _GetMaster()
-  generate_json_options.test_results_server = config.Master.test_results_server
+      config.Main.archive_url, DEST_DIR, subordinate_name, options.test_type)
+  generate_json_options.main_name = options.main_class_name or _GetMain()
+  generate_json_options.test_results_server = config.Main.test_results_server
 
-  print _GetMasterString(generate_json_options.master_name)
+  print _GetMainString(generate_json_options.main_name)
 
   generator = None
 
@@ -377,7 +377,7 @@ def _GenerateJSONForTestResults(options, log_processor):
       generate_json_options.webkit_revision = _GetRevision(webkit_dir)
 
     # Generate results JSON file and upload it to the appspot server.
-    generator = gtest_slave_utils.GenerateJSONResults(
+    generator = gtest_subordinate_utils.GenerateJSONResults(
         results_map, generate_json_options)
 
   except Exception as e:
@@ -386,13 +386,13 @@ def _GenerateJSONForTestResults(options, log_processor):
     return False
 
   # The code can throw all sorts of exceptions, including
-  # slave.gtest.networktransaction.NetworkTimeout so just trap everything.
+  # subordinate.gtest.networktransaction.NetworkTimeout so just trap everything.
   # Earlier versions of this code ignored network errors, so until a
   # retry mechanism is added, continue to do so rather than reporting
   # an error.
   try:
     # Upload results JSON file to the appspot server.
-    gtest_slave_utils.UploadJSONResults(generator)
+    gtest_subordinate_utils.UploadJSONResults(generator)
   except Exception as e:
     # Consider this non-fatal for the moment.
     print 'Unexpected error while uploading JSON: %s' % e
@@ -460,7 +460,7 @@ def _StartHttpServer(platform, build_dir, test_exe_path, document_root):
   # Name the output directory for the exe, without its path or suffix.
   # e.g., chrome-release/httpd_logs/unit_tests/
   test_exe_name = os.path.splitext(os.path.basename(test_exe_path))[0]
-  output_dir = os.path.join(slave_utils.SlaveBaseDir(build_dir),
+  output_dir = os.path.join(subordinate_utils.SubordinateBaseDir(build_dir),
                             'httpd_logs',
                             test_exe_name)
 
@@ -572,7 +572,7 @@ def _CreateLogProcessor(log_processor_class, options):
     tracker_obj = log_processor_class()
   elif log_processor_class.__name__ in ('GTestJSONParser',):
     tracker_obj = log_processor_class(
-        options.build_properties.get('mastername'))
+        options.build_properties.get('mainname'))
   else:
     build_dir = os.path.abspath(options.build_dir)
 
@@ -601,7 +601,7 @@ def _CreateLogProcessor(log_processor_class, options):
         webkit_revision=webkit_revision)
 
   if options.annotate and options.generate_json_file:
-    tracker_obj.ProcessLine(_GetMasterString(_GetMaster()))
+    tracker_obj.ProcessLine(_GetMainString(_GetMain()))
 
   return tracker_obj
 
@@ -628,7 +628,7 @@ def _GetSupplementalColumns(build_dir, supplemental_colummns_file_name):
 
 
 def _SendResultsToDashboard(log_processor, system, test, url, build_dir,
-                            mastername, buildername, buildnumber,
+                            mainname, buildername, buildnumber,
                             supplemental_columns_file, extra_columns=None):
   """Sends results from a log processor instance to the dashboard.
 
@@ -639,8 +639,8 @@ def _SendResultsToDashboard(log_processor, system, test, url, build_dir,
     test: Test "suite" name string.
     url: Dashboard URL.
     build_dir: Build dir name (used for cache file by results_dashboard).
-    mastername: Buildbot master name, e.g. 'chromium.perf'.
-        WARNING! This is incorrectly called "masterid" in some parts of the
+    mainname: Buildbot main name, e.g. 'chromium.perf'.
+        WARNING! This is incorrectly called "mainid" in some parts of the
         dashboard code.
     buildername: Builder name, e.g. 'Linux QA Perf (1)'
     buildnumber: Build number (as a string).
@@ -659,7 +659,7 @@ def _SendResultsToDashboard(log_processor, system, test, url, build_dir,
 
   charts = _GetDataFromLogProcessor(log_processor)
   points = results_dashboard.MakeListOfPoints(
-      charts, system, test, mastername, buildername, buildnumber,
+      charts, system, test, mainname, buildername, buildnumber,
       supplemental_columns)
   results_dashboard.SendResults(points, url, build_dir)
 
@@ -742,7 +742,7 @@ def _UploadProfilingData(options, args):
   builder_name = options.build_properties.get('buildername')
   if ((builder_name != 'XP Perf (dbg) (2)' and
        builder_name != 'Linux Perf (lowmem)') or
-      options.build_properties.get('mastername') != 'chromium.perf' or
+      options.build_properties.get('mainname') != 'chromium.perf' or
       not options.build_properties.get('got_revision')):
     return 0
 
@@ -757,14 +757,14 @@ def _UploadProfilingData(options, args):
 
   build_dir = os.path.normpath(os.path.abspath(options.build_dir))
 
-  # archive_profiling_data.py is in /b/build/scripts/slave and
-  # build_dir is /b/build/slave/SLAVE_NAME/build/src/build.
+  # archive_profiling_data.py is in /b/build/scripts/subordinate and
+  # build_dir is /b/build/subordinate/SLAVE_NAME/build/src/build.
   profiling_archive_tool = os.path.join(build_dir, '..', '..', '..', '..', '..',
-                                        'scripts', 'slave',
+                                        'scripts', 'subordinate',
                                         'archive_profiling_data.py')
 
   if sys.platform == 'win32':
-    python = 'python_slave'
+    python = 'python_subordinate'
   else:
     python = 'python'
 
@@ -822,7 +822,7 @@ def _UploadGtestJsonSummary(json_path, build_properties, test_exe):
       with gzip.GzipFile(fileobj=f, compresslevel=9) as gzipf:
         gzipf.write(target_json_serialized)
 
-    slave_utils.GSUtilCopy(target_json_path, raw_json_gs_path)
+    subordinate_utils.GSUtilCopy(target_json_path, raw_json_gs_path)
   finally:
     os.remove(target_json_path)
 
@@ -866,12 +866,12 @@ def _UploadGtestJsonSummary(json_path, build_properties, test_exe):
                 'status': run_data['status'],
                 'test_exe': target_json['test_exe'],
                 'global_tags': target_json['gtest_results']['global_tags'],
-                'slavename':
-                    target_json['build_properties'].get('slavename', ''),
+                'subordinatename':
+                    target_json['build_properties'].get('subordinatename', ''),
                 'buildername':
                     target_json['build_properties'].get('buildername', ''),
-                'mastername':
-                    target_json['build_properties'].get('mastername', ''),
+                'mainname':
+                    target_json['build_properties'].get('mainname', ''),
                 'raw_json_gs_path': raw_json_gs_path,
                 'timestamp': now.strftime('%Y-%m-%d %H:%M:%S.%f'),
                 'flaky_failures': flaky_failures,
@@ -880,7 +880,7 @@ def _UploadGtestJsonSummary(json_path, build_properties, test_exe):
               }
               gzipf.write(json.dumps(row) + '\n')
 
-    slave_utils.GSUtilCopy(bigquery_json_path, bigquery_json_gs_path)
+    subordinate_utils.GSUtilCopy(bigquery_json_path, bigquery_json_gs_path)
   finally:
     os.remove(bigquery_json_path)
 
@@ -979,7 +979,7 @@ def _MainMac(options, args, extra_env):
 
   # Nuke anything that appears to be stale chrome items in the temporary
   # directory from previous test runs (i.e.- from crashes or unittest leaks).
-  slave_utils.RemoveChromeTemporaryFiles()
+  subordinate_utils.RemoveChromeTemporaryFiles()
 
   if options.parallel:
     command = _BuildParallelCommand(build_dir, test_exe_path, options)
@@ -1049,7 +1049,7 @@ def _MainMac(options, args, extra_env):
     _SendResultsToDashboard(
         log_processor, _GetPerfID(options),
         options.test_type, options.results_url, options.build_dir,
-        options.build_properties.get('mastername'),
+        options.build_properties.get('mainname'),
         options.build_properties.get('buildername'),
         options.build_properties.get('buildnumber'),
         options.supplemental_columns_file,
@@ -1123,7 +1123,7 @@ def _MainIOS(options, args, extra_env):
 
   # Nuke anything that appears to be stale chrome items in the temporary
   # directory from previous test runs (i.e.- from crashes or unittest leaks).
-  slave_utils.RemoveChromeTemporaryFiles()
+  subordinate_utils.RemoveChromeTemporaryFiles()
 
   dirs_to_cleanup = [tmpdir]
   crash_files_before = set([])
@@ -1165,10 +1165,10 @@ def _MainLinux(options, args, extra_env):
     raise chromium_utils.MissingArgument('Usage: %s' % USAGE)
 
   build_dir = os.path.normpath(os.path.abspath(options.build_dir))
-  if options.slave_name:
-    slave_name = options.slave_name
+  if options.subordinate_name:
+    subordinate_name = options.subordinate_name
   else:
-    slave_name = slave_utils.SlaveBuildName(build_dir)
+    subordinate_name = subordinate_utils.SubordinateBuildName(build_dir)
   bin_dir = os.path.join(build_dir, options.target)
 
   # Figure out what we want for a special frame buffer directory.
@@ -1177,8 +1177,8 @@ def _MainLinux(options, args, extra_env):
     fp_special_xvfb = options.factory_properties.get('special_xvfb', None)
     fp_chromeos = options.factory_properties.get('chromeos', None)
     if fp_special_xvfb or (fp_special_xvfb is None and (fp_chromeos or
-        slave_utils.GypFlagIsOn(options, 'use_aura') or
-        slave_utils.GypFlagIsOn(options, 'chromeos'))):
+        subordinate_utils.GypFlagIsOn(options, 'use_aura') or
+        subordinate_utils.GypFlagIsOn(options, 'chromeos'))):
       special_xvfb_dir = options.special_xvfb_dir
   elif options.special_xvfb:
     special_xvfb_dir = options.special_xvfb_dir
@@ -1219,7 +1219,7 @@ def _MainLinux(options, args, extra_env):
 
   # Nuke anything that appears to be stale chrome items in the temporary
   # directory from previous test runs (i.e.- from crashes or unittest leaks).
-  slave_utils.RemoveChromeTemporaryFiles()
+  subordinate_utils.RemoveChromeTemporaryFiles()
 
   extra_env['LD_LIBRARY_PATH'] = ''
 
@@ -1267,7 +1267,7 @@ def _MainLinux(options, args, extra_env):
                                       document_root=options.document_root)
 
     # TODO(dpranke): checking on test_exe is a temporary hack until we
-    # can change the buildbot master to pass --xvfb instead of --no-xvfb
+    # can change the buildbot main to pass --xvfb instead of --no-xvfb
     # for these two steps. See
     # https://code.google.com/p/chromium/issues/detail?id=179814
     start_xvfb = (options.xvfb or
@@ -1275,7 +1275,7 @@ def _MainLinux(options, args, extra_env):
                   'devtools_perf_test_wrapper' in test_exe)
     if start_xvfb:
       xvfb.StartVirtualX(
-          slave_name, bin_dir,
+          subordinate_name, bin_dir,
           with_wm=(options.factory_properties.get('window_manager', 'True') ==
                    'True'),
           server_dir=special_xvfb_dir)
@@ -1303,7 +1303,7 @@ def _MainLinux(options, args, extra_env):
     if http_server:
       http_server.StopServer()
     if start_xvfb:
-      xvfb.StopVirtualX(slave_name)
+      xvfb.StopVirtualX(subordinate_name)
     if _UsingGtestJson(options):
       if json_file_name:
         _UploadGtestJsonSummary(json_file_name,
@@ -1325,7 +1325,7 @@ def _MainLinux(options, args, extra_env):
     _SendResultsToDashboard(
         log_processor, _GetPerfID(options),
         options.test_type, options.results_url, options.build_dir,
-        options.build_properties.get('mastername'),
+        options.build_properties.get('mainname'),
         options.build_properties.get('buildername'),
         options.build_properties.get('buildnumber'),
         options.supplemental_columns_file,
@@ -1367,7 +1367,7 @@ def _MainWin(options, args, extra_env):
     raise chromium_utils.PathNotFound('Unable to find %s' % test_exe_path)
 
   if options.enable_pageheap:
-    slave_utils.SetPageHeap(build_dir, 'chrome.exe', True)
+    subordinate_utils.SetPageHeap(build_dir, 'chrome.exe', True)
 
   if options.parallel:
     command = _BuildParallelCommand(build_dir, test_exe_path, options)
@@ -1393,7 +1393,7 @@ def _MainWin(options, args, extra_env):
 
   # Nuke anything that appears to be stale chrome items in the temporary
   # directory from previous test runs (i.e.- from crashes or unittest leaks).
-  slave_utils.RemoveChromeTemporaryFiles()
+  subordinate_utils.RemoveChromeTemporaryFiles()
 
   # If --annotate=list was passed, list the log processor classes and exit.
   if _ListLogProcessors(options.annotate):
@@ -1431,7 +1431,7 @@ def _MainWin(options, args, extra_env):
       log_processor.ProcessJSONFile(options.build_dir)
 
   if options.enable_pageheap:
-    slave_utils.SetPageHeap(build_dir, 'chrome.exe', False)
+    subordinate_utils.SetPageHeap(build_dir, 'chrome.exe', False)
 
   if options.generate_json_file:
     if not _GenerateJSONForTestResults(options, log_processor):
@@ -1447,7 +1447,7 @@ def _MainWin(options, args, extra_env):
     _SendResultsToDashboard(
         log_processor, _GetPerfID(options),
         options.test_type, options.results_url, options.build_dir,
-        options.build_properties.get('mastername'),
+        options.build_properties.get('mainname'),
         options.build_properties.get('buildername'),
         options.build_properties.get('buildnumber'),
         options.supplemental_columns_file,
@@ -1510,7 +1510,7 @@ def _MainAndroid(options, args, extra_env):
     _SendResultsToDashboard(
         log_processor, _GetPerfID(options),
         options.test_type, options.results_url, options.build_dir,
-        options.build_properties.get('mastername'),
+        options.build_properties.get('mainname'),
         options.build_properties.get('buildername'),
         options.build_properties.get('buildnumber'),
         options.supplemental_columns_file,
@@ -1619,17 +1619,17 @@ def main():
                            help='output results directory for JSON file.')
   option_parser.add_option('--builder-name', default=None,
                            help='The name of the builder running this script.')
-  option_parser.add_option('--slave-name', default=None,
-                           help='The name of the slave running this script.')
-  option_parser.add_option('--master-class-name', default=None,
-                           help='The class name of the buildbot master running '
+  option_parser.add_option('--subordinate-name', default=None,
+                           help='The name of the subordinate running this script.')
+  option_parser.add_option('--main-class-name', default=None,
+                           help='The class name of the buildbot main running '
                                 'this script: examples include "Chromium", '
                                 '"ChromiumWebkit", and "ChromiumGPU". The '
                                 'flakiness dashboard uses this value to '
                                 'categorize results. See buildershandler.py '
                                 'in the flakiness dashboard code '
                                 '(use codesearch) for the known values. '
-                                'Defaults to fetching it from slaves.cfg.')
+                                'Defaults to fetching it from subordinates.cfg.')
   option_parser.add_option('--build-number', default=None,
                            help=('The build number of the builder running'
                                  'this script.'))

@@ -47,9 +47,9 @@ def GenSteps(api):
 
 
 def GenTests(api):
-  yield api.test('standard') + api.properties.generic(mastername='client.v8')
+  yield api.test('standard') + api.properties.generic(mainname='client.v8')
   yield (api.test('rolling_deactivated') +
-      api.properties.generic(mastername='client.v8') +
+      api.properties.generic(mainname='client.v8') +
       api.override_step_data(
           'check roll status', api.raw_io.stream_output('0', stream='stdout'))
     )

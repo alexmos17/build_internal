@@ -72,7 +72,7 @@ def GenSteps(api):
 
   # gclient api incorrectly sets Path('[CHECKOUT]') to build/src/dartium.deps
   # because Dartium has its DEPS file in dartium.deps, not directly in src.
-  api.path['checkout'] = api.path['slave_build'].join('src')
+  api.path['checkout'] = api.path['subordinate_build'].join('src')
 
   api.chromium.runhooks()
   api.python('fetch_reference_build',
@@ -105,7 +105,7 @@ def GenSteps(api):
     'target':  'Release',
     'target_os':  None,
     'target_platform':  target_platform,
-    'tools_dir':  str(api.path['slave_build'].join('src', 'tools')),
+    'tools_dir':  str(api.path['subordinate_build'].join('src', 'tools')),
   }
   if 'reference_build_executable' in api.properties:
     factory_properties['reference_build_executable'] = api.properties[
@@ -116,7 +116,7 @@ def GenSteps(api):
     factory_properties['step_name'] = test
     fp = "--factory-properties=%s" % json.dumps(factory_properties)
     api.chromium.runtest(
-        api.chromium.m.path['build'].join('scripts', 'slave', 'telemetry.py'),
+        api.chromium.m.path['build'].join('scripts', 'subordinate', 'telemetry.py'),
         [fp], name=test, python_mode=True,
         results_url=dashboard_upload_url,
         annotate='graphing', perf_dashboard_id=test, test_type=test,

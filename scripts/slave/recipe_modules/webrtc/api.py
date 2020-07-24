@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave import recipe_api
-from slave.recipe_modules.webrtc import builders
+from subordinate import recipe_api
+from subordinate.recipe_modules.webrtc import builders
 
 
 class WebRTCApi(recipe_api.RecipeApi):
@@ -52,7 +52,7 @@ class WebRTCApi(recipe_api.RecipeApi):
 
   # Map of GS archive names to urls.
   # TODO(kjellander): Convert to use the auto-generated URLs once we've setup a
-  # separate bucket per master.
+  # separate bucket per main.
   GS_ARCHIVES = {
     'android_dbg_archive': 'gs://chromium-webrtc/android_chromium_dbg',
     'android_dbg_archive_fyi': ('gs://chromium-webrtc/'
@@ -215,7 +215,7 @@ class WebRTCApi(recipe_api.RecipeApi):
     # module instead.
     assert self.c.PERF_ID, ('You must specify PERF_ID for the builder that '
                             'runs the sizes step.')
-    sizes_script = self.m.path['build'].join('scripts', 'slave', 'chromium',
+    sizes_script = self.m.path['build'].join('scripts', 'subordinate', 'chromium',
                                              'sizes.py')
     args = ['--target', self.m.chromium.c.BUILD_CONFIG,
             '--platform', self.m.chromium.c.TARGET_PLATFORM]
@@ -262,5 +262,5 @@ class WebRTCApi(recipe_api.RecipeApi):
   def virtual_webcam_check(self):
     self.m.python(
       'webcam_check',
-      self.m.path['build'].join('scripts', 'slave', 'webrtc',
+      self.m.path['build'].join('scripts', 'subordinate', 'webrtc',
                                 'ensure_webcam_is_running.py'))

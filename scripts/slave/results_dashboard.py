@@ -13,11 +13,11 @@ import os
 import urllib
 import urllib2
 
-from slave import slave_utils
+from subordinate import subordinate_utils
 
 # The paths in the results dashboard URLs for sending and viewing results.
 SEND_RESULTS_PATH = '/add_point'
-RESULTS_LINK_PATH = '/report?masters=%s&bots=%s&tests=%s&rev=%s'
+RESULTS_LINK_PATH = '/report?mains=%s&bots=%s&tests=%s&rev=%s'
 
 # CACHE_DIR/CACHE_FILENAME will be created in options.build_dir to cache
 # results which need to be retried.
@@ -149,7 +149,7 @@ def _CanParseJSON(my_json):
   return True
 
 
-def MakeListOfPoints(charts, bot, test_name, mastername, buildername,
+def MakeListOfPoints(charts, bot, test_name, mainname, buildername,
                      buildnumber, supplemental_columns):
   """Constructs a list of point dictionaries to send.
 
@@ -161,34 +161,34 @@ def MakeListOfPoints(charts, bot, test_name, mastername, buildername,
         log processor classes (see process_log_utils.GraphingLogProcessor).
     bot: A string which comes from perf_id, e.g. linux-release.
     test_name: A test suite name, e.g. sunspider.
-    mastername: Buildbot master name, e.g. chromium.perf.
+    mainname: Buildbot main name, e.g. chromium.perf.
     buildername: Builder name (for stdio links).
     buildnumber: Build number (for stdio links).
     supplemental_columns: A dictionary of extra data to send with a point.
 
   Returns:
     A list of dictionaries in the format accepted by the perf dashboard.
-    Each dictionary has the keys "master", "bot", "test", "value", "revision".
+    Each dictionary has the keys "main", "bot", "test", "value", "revision".
     The full details of this format are described at http://goo.gl/TcJliv.
   """
   results = []
 
-  # The master name used for the dashboard is the CamelCase name returned by
-  # GetActiveMaster(), and not the canonical master name with dots.
-  master = slave_utils.GetActiveMaster()
+  # The main name used for the dashboard is the CamelCase name returned by
+  # GetActiveMain(), and not the canonical main name with dots.
+  main = subordinate_utils.GetActiveMain()
 
   for chart_name, chart_data in sorted(charts.items()):
-    revision, revision_columns = _RevisionNumberColumns(chart_data, master)
+    revision, revision_columns = _RevisionNumberColumns(chart_data, main)
 
     for trace_name, trace_values in sorted(chart_data['traces'].items()):
       is_important = trace_name in chart_data.get('important', [])
       test_path = _TestPath(test_name, chart_name, trace_name)
       result = {
-          'master': master,
+          'main': main,
           'bot': bot,
           'test': test_path,
           'revision': revision,
-          'masterid': mastername,
+          'mainid': mainname,
           'buildername': buildername,
           'buildnumber': buildnumber,
           'supplemental_columns': {}
@@ -226,12 +226,12 @@ def MakeListOfPoints(charts, bot, test_name, mastername, buildername,
   return results
 
 
-def _RevisionNumberColumns(data, master):
+def _RevisionNumberColumns(data, main):
   """Get the revision number and revision-related columns from the given data.
 
   Args:
     data: A dict of information from one line of the log file.
-    master: The name of the buildbot master.
+    main: The name of the buildbot main.
 
   Returns:
     A pair with the revision number (which must be an int), and a dict of
@@ -264,12 +264,12 @@ def _RevisionNumberColumns(data, master):
   # Blink builds can have the same chromium revision for two builds. So
   # order them by timestamp to get them to show on the dashboard in the
   # order they were built.
-  if master in ['ChromiumWebkit', 'Oilpan']:
+  if main in ['ChromiumWebkit', 'Oilpan']:
     if not git_hash:
       revision_supplemental_columns['r_chromium_svn'] = revision
     revision = GetTimestamp()
 
-  # Regardless of what the master is, if the given "rev" can't be parsed as
+  # Regardless of what the main is, if the given "rev" can't be parsed as
   # an int, we're assuming that it's a git hash.
   if git_hash:
     revision_supplemental_columns['r_chromium'] = git_hash
@@ -277,7 +277,7 @@ def _RevisionNumberColumns(data, master):
   # For Oilpan, send the webkit_rev as r_oilpan since we are getting
   # the oilpan branch revision instead of the Blink trunk revision
   # and set r_oilpan to be the dashboard default revision.
-  if master == 'Oilpan':
+  if main == 'Oilpan':
     revision_supplemental_columns['r_oilpan'] = data['webkit_rev']
     revision_supplemental_columns['a_default_rev'] = 'r_oilpan'
   else:
@@ -305,10 +305,10 @@ def _TestPath(test_name, chart_name, trace_name):
 
   Returns:
     A slash-separated list of names that corresponds to the hierarchy of test
-    data in the Chrome Performance Dashboard; doesn't include master or bot
+    data in the Chrome Performance Dashboard; doesn't include main or bot
     name.
   """
-  # For tests run on reference builds by builds/scripts/slave/telemetry.py,
+  # For tests run on reference builds by builds/scripts/subordinate/telemetry.py,
   # "_ref" is appended to the trace name. On the dashboard, as long as the
   # result is on the right chart, it can just be called "ref".
   if trace_name == chart_name + '_ref':
@@ -367,7 +367,7 @@ def _LinkAnnotation(url, data):
     return None
   point = data[0]
   results_link = url + RESULTS_LINK_PATH % (
-      urllib.quote(point['master']),
+      urllib.quote(point['main']),
       urllib.quote(point['bot']),
       urllib.quote(point['test'].split('/')[0]),
       point['revision'])

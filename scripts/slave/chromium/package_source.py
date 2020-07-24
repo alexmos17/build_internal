@@ -19,7 +19,7 @@ import threading
 import time
 
 from common import chromium_utils
-from slave import slave_utils
+from subordinate import subordinate_utils
 
 
 FILENAME = 'chromium-src'
@@ -112,7 +112,7 @@ def GenerateIndex():
 
 def DeleteIfExists(filename):
   """Deletes the file (relative to GSBASE), if it exists."""
-  (status, output) = slave_utils.GSUtilListBucket(GSBASE, ['-l'])
+  (status, output) = subordinate_utils.GSUtilListBucket(GSBASE, ['-l'])
   if status != 0:
     raise Exception('ERROR: failed to get list of GSBASE, exiting' % GSBASE)
 
@@ -120,7 +120,7 @@ def DeleteIfExists(filename):
   if not regex.search(output):
     return
 
-  status = slave_utils.GSUtilDeleteFile('%s/%s' % (GSBASE, filename))
+  status = subordinate_utils.GSUtilDeleteFile('%s/%s' % (GSBASE, filename))
   if status != 0:
     raise Exception('ERROR: GSUtilDeleteFile error %d. "%s"' % (
         status, '%s/%s' % (GSBASE, filename)))
@@ -194,13 +194,13 @@ def main():
     DeleteIfExists(partial_filename)
 
     print '%s: Uploading...' % time.strftime('%X')
-    status = slave_utils.GSUtilCopyFile(partial_filename, GSBASE, gs_acl=GSACL)
+    status = subordinate_utils.GSUtilCopyFile(partial_filename, GSBASE, gs_acl=GSACL)
     if status != 0:
       raise Exception('ERROR: GSUtilCopyFile error %d. "%s" -> "%s"' % (
           status, partial_filename, GSBASE))
 
     print '%s: Finalizing google storage...' % time.strftime('%X')
-    status = slave_utils.GSUtilMoveFile('%s/%s' % (GSBASE, partial_filename),
+    status = subordinate_utils.GSUtilMoveFile('%s/%s' % (GSBASE, partial_filename),
                                         '%s/%s' % (GSBASE, completed_filename),
                                         gs_acl=GSACL)
     if status != 0:
@@ -208,7 +208,7 @@ def main():
           status, '%s/%s' % (GSBASE, partial_filename),
           '%s/%s' % (GSBASE, completed_filename)))
 
-    (status, output) = slave_utils.GSUtilListBucket(GSBASE, ['-l'])
+    (status, output) = subordinate_utils.GSUtilListBucket(GSBASE, ['-l'])
     if status != 0:
       raise Exception('ERROR: failed to get list of GSBASE, exiting' % GSBASE)
 
@@ -230,7 +230,7 @@ def main():
           '%s', time.strptime(match_data.group(1), '%Y-%m-%dT%H:%M:%S')))
       if timestamp < last_week:
         print 'Deleting %s...' % match_data.group(2)
-        status = slave_utils.GSUtilDeleteFile(match_data.group(2))
+        status = subordinate_utils.GSUtilDeleteFile(match_data.group(2))
         if status != 0:
           raise Exception('ERROR: GSUtilDeleteFile error %d. "%s"' % (
               status, match_data.group(2)))

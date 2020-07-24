@@ -6,7 +6,7 @@
 """Upload a single file to a Google Storage Bucket.
 
 To test:
-  cd .../build/scripts/slave/skia
+  cd .../build/scripts/subordinate/skia
   PYTHONPATH=$PWD/../..:$PWD/../../../site_config python upload_to_bucket.py \
     --source_filepath=../../../DEPS --dest_gsbase=gs://chromium-skia-gm
 """
@@ -15,7 +15,7 @@ import optparse
 import os
 import sys
 
-from slave import slave_utils
+from subordinate import subordinate_utils
 
 
 def upload_to_bucket(source_filepath, dest_gsbase):
@@ -24,12 +24,12 @@ def upload_to_bucket(source_filepath, dest_gsbase):
       source_filepath, abs_source_filepath)
   if not os.path.exists(abs_source_filepath):
     raise Exception('ERROR: file not found: %s' % abs_source_filepath)
-  status = slave_utils.GSUtilCopyFile(abs_source_filepath, dest_gsbase,
+  status = subordinate_utils.GSUtilCopyFile(abs_source_filepath, dest_gsbase,
                                       gs_acl='public-read')
   if status != 0:
     raise Exception('ERROR: GSUtilCopyFile error %d. "%s" -> "%s"' % (
         status, abs_source_filepath, dest_gsbase))
-  (status, _output) = slave_utils.GSUtilListBucket(dest_gsbase, ['-l'])
+  (status, _output) = subordinate_utils.GSUtilListBucket(dest_gsbase, ['-l'])
   if status != 0:
     raise Exception('ERROR: failed to get list of %s, exiting' % dest_gsbase)
   return 0

@@ -33,7 +33,7 @@ def GenTests(api):
         api.test('%s_%s' % (plat, flavor_lower)) +
         api.properties.scheduled(
           build_config=flavor,
-          mastername='chromium.gpu.testing',
+          mainname='chromium.gpu.testing',
           buildername='%s %s builder' % (plat, flavor_lower),
           buildnumber=571) +
         api.platform.name(plat)
@@ -45,7 +45,7 @@ def GenTests(api):
     api.test('win_release_tot_angle') +
     api.properties.scheduled(
       build_config='Release',
-      mastername='chromium.gpu.fyi',
+      mainname='chromium.gpu.fyi',
       buildername='win release tot angle builder',
       buildnumber=572) +
     api.platform.name('win')
@@ -54,7 +54,7 @@ def GenTests(api):
   yield (
     api.test('compile_with_patch_fail') +
     api.properties.tryserver(
-      mastername='tryserver.chromium.gpu',
+      mainname='tryserver.chromium.gpu',
       buildername='mac_gpu') +
     api.step_data('compile (with patch)', retcode=1) +
     api.platform.name('win')
@@ -63,7 +63,7 @@ def GenTests(api):
   yield (
     api.test('compile_without_patch_fail') +
     api.properties.tryserver(
-      mastername='tryserver.chromium.gpu',
+      mainname='tryserver.chromium.gpu',
       buildername='mac_gpu') +
     api.step_data('compile (with patch)', retcode=1) +
     api.step_data('compile (without patch)', retcode=1) +
@@ -74,7 +74,7 @@ def GenTests(api):
     api.test('compile_fail_is_critical_on_main') +
     api.properties.scheduled(
       build_config='Release',
-      mastername='chromium.gpu.testing',
+      mainname='chromium.gpu.testing',
       buildername='linux release builder',
       buildnumber=571) +
     api.platform.name('linux') +

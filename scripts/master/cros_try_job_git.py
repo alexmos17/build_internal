@@ -25,7 +25,7 @@ from twisted.internet import defer, reactor, utils
 from twisted.mail.smtp import SMTPSenderFactory
 from twisted.python import log
 
-from master.try_job_base import BadJobfile
+from main.try_job_base import BadJobfile
 
 
 class InvalidEtcBuild(BadJobfile):
@@ -62,7 +62,7 @@ class CrOSTryJobGit(TryBase):
   """Poll a Git server to grab patches to try."""
 
   _PROPERTY_SOURCE = 'Try Job'
-  # The version of tryjob that the master is expecting.
+  # The version of tryjob that the main is expecting.
   _TRYJOB_FORMAT_VERSION = 3
 
   # Functions that translate from one tryjob version to another.
@@ -155,7 +155,7 @@ class CrOSTryJobGit(TryBase):
               ('bot', list, True),
               ('extra_args', list, False),
               ('version', int, True),
-              ('slaves_request', list, False),
+              ('subordinates_request', list, False),
     ]
 
     error_msgs = []
@@ -190,7 +190,7 @@ class CrOSTryJobGit(TryBase):
     props = Properties()
     props.setProperty('extra_args', options.get('extra_args', []),
                       self._PROPERTY_SOURCE)
-    props.setProperty('slaves_request', options.get('slaves_request', []),
+    props.setProperty('subordinates_request', options.get('subordinates_request', []),
                       self._PROPERTY_SOURCE)
     props.setProperty('chromeos_config', config, self._PROPERTY_SOURCE)
     return props
@@ -273,7 +273,7 @@ see<br>this message please contact chromeos-build@google.com.<br>
       raise
 
     # The sourcestamp/buildsets created will be merge-able.
-    d = self.master.db.sourcestamps.addSourceStamp(
+    d = self.main.db.sourcestamps.addSourceStamp(
         branch=change.branch,
         revision=change.revision,
         project=change.project,

@@ -271,7 +271,7 @@ class GitZip(object):
       else:
         raise RuntimeError('No existing checkout, and no url provided')
       self._run_cmd(cmd, workdir)
-      self._run_cmd(['git', 'update-ref', 'refs/heads/master', 'origin/master'],
+      self._run_cmd(['git', 'update-ref', 'refs/heads/main', 'origin/main'],
                     clonedir)
       self.PostFetch(clonedir)
     except Exception, e:

@@ -70,7 +70,7 @@ BUILDERS = {
       },
       'linux_chromium_rel_ng': {
         'based_on_main_waterfall': {
-          'mastername': 'chromium.linux',
+          'mainname': 'chromium.linux',
           'buildername': 'Linux Builder',
           'testers': ['Linux Tests'],
         },
@@ -659,9 +659,9 @@ def GenSteps(api):
 
     return compile_targets, gtest_tests
 
-  def get_bot_config(mastername, buildername):
-    master_dict = BUILDERS.get(mastername, {})
-    return master_dict.get('builders', {}).get(buildername)
+  def get_bot_config(mainname, buildername):
+    main_dict = BUILDERS.get(mainname, {})
+    return main_dict.get('builders', {}).get(buildername)
 
   def deapply_patch(bot_update_step):
     if api.platform.is_win:
@@ -678,9 +678,9 @@ def GenSteps(api):
       api.tryserver.set_transient_failure_tryjob_result()
       raise
 
-  def get_test_spec(mastername, buildername, name='read test spec',
+  def get_test_spec(mainname, buildername, name='read test spec',
                     step_test_data=None):
-    bot_config = get_bot_config(mastername, buildername)
+    bot_config = get_bot_config(mainname, buildername)
 
     test_spec_file = bot_config['testing'].get('test_spec_file',
                                                'chromium_trybot.json')
@@ -715,11 +715,11 @@ def GenSteps(api):
     step_result.presentation.step_text = 'path: %s' % test_spec_path
     return step_result.json.output
 
-  def compile_and_return_tests(mastername, buildername):
-    bot_config = get_bot_config(mastername, buildername)
+  def compile_and_return_tests(mainname, buildername):
+    bot_config = get_bot_config(mainname, buildername)
     assert bot_config, (
-        'Unrecognized builder name %r for master %r.' % (
-            buildername, mastername))
+        'Unrecognized builder name %r for main %r.' % (
+            buildername, mainname))
 
     # Make sure tests and the recipe specify correct and matching platform.
     assert api.platform.name == bot_config.get('testing', {}).get('platform')
@@ -737,7 +737,7 @@ def GenSteps(api):
 
     bot_update_step = api.bot_update.ensure_checkout(force=True)
 
-    test_spec = get_test_spec(mastername, buildername)
+    test_spec = get_test_spec(mainname, buildername)
 
     def should_use_test(test):
       """Given a test dict from test spec returns True or False."""
@@ -748,7 +748,7 @@ def GenSteps(api):
         if bot_config['chromium_config'] not in test['chromium_configs']:
           return False
       if 'exclude_builders' in test:
-        if '%s:%s' % (mastername, buildername) in test['exclude_builders']:
+        if '%s:%s' % (mainname, buildername) in test['exclude_builders']:
           return False
       return True
 
@@ -885,35 +885,35 @@ def GenSteps(api):
 
     return tests, bot_update_step
 
-  mastername = api.properties.get('mastername')
+  mainname = api.properties.get('mainname')
   buildername = api.properties.get('buildername')
-  bot_config = get_bot_config(mastername, buildername)
+  bot_config = get_bot_config(mainname, buildername)
 
   main_waterfall_config = bot_config.get('based_on_main_waterfall')
   if main_waterfall_config:
-    bot_update_step, master_dict, test_spec = \
+    bot_update_step, main_dict, test_spec = \
         api.chromium_tests.sync_and_configure_build(
-            main_waterfall_config['mastername'],
+            main_waterfall_config['mainname'],
             main_waterfall_config['buildername'],
             override_bot_type='builder_tester',
             enable_swarming=True)
 
     tests = api.chromium_tests.tests_for_builder(
-        main_waterfall_config['mastername'],
+        main_waterfall_config['mainname'],
         main_waterfall_config['buildername'],
         bot_update_step,
-        master_dict,
+        main_dict,
         override_bot_type='builder_tester')
     for tester in main_waterfall_config['testers']:
       tests.extend(api.chromium_tests.tests_for_builder(
-          main_waterfall_config['mastername'],
+          main_waterfall_config['mainname'],
           tester,
           bot_update_step,
-          master_dict,
+          main_dict,
           override_bot_type='builder_tester'))
 
     trybot_test_spec = get_test_spec(
-        mastername,
+        mainname,
         buildername,
         name='read trybot test spec',
         step_test_data=lambda: api.json.test_api.output([
@@ -932,17 +932,17 @@ def GenSteps(api):
         test.force_swarming(swarming_shards)
 
     api.chromium_tests.compile(
-        main_waterfall_config['mastername'],
+        main_waterfall_config['mainname'],
         main_waterfall_config['buildername'],
         bot_update_step,
-        master_dict,
+        main_dict,
         test_spec,
         override_bot_type='builder_tester',
         override_tests=tests)
   else:
     # TODO(phajdan.jr): Remove the legacy trybot-specific codepath.
     tests, bot_update_step = compile_and_return_tests(
-        mastername, buildername)
+        mainname, buildername)
 
   def deapply_patch_fn(failing_tests):
     deapply_patch(bot_update_step)
@@ -959,7 +959,7 @@ def GenSteps(api):
         raise
       # Search for *.isolated only if enabled in bot config or if some
       # swarming test is being recompiled.
-      bot_config = get_bot_config(mastername, buildername)
+      bot_config = get_bot_config(mainname, buildername)
       has_failing_swarming_tests = [
           t for t in failing_tests if t.uses_swarming]
       if bot_config.get('use_isolate') or has_failing_swarming_tests:
@@ -985,34 +985,34 @@ def GenTests(api):
     ],
   }
   canned_test = api.json.canned_gtest_output
-  def props(config='Release', mastername='tryserver.chromium.linux',
+  def props(config='Release', mainname='tryserver.chromium.linux',
             buildername='linux_chromium_rel', **kwargs):
     kwargs.setdefault('revision', None)
     return api.properties.tryserver(
       build_config=config,
-      mastername=mastername,
+      mainname=mainname,
       buildername=buildername,
       **kwargs
     )
 
   # While not strictly required for coverage, record expectations for each
   # of the configs so we can see when and how they change.
-  for mastername, master_config in BUILDERS.iteritems():
-    for buildername, bot_config in master_config['builders'].iteritems():
-      test_name = 'full_%s_%s' % (_sanitize_nonalpha(mastername),
+  for mainname, main_config in BUILDERS.iteritems():
+    for buildername, bot_config in main_config['builders'].iteritems():
+      test_name = 'full_%s_%s' % (_sanitize_nonalpha(mainname),
                                   _sanitize_nonalpha(buildername))
       yield (
         api.test(test_name) +
         api.platform(bot_config['testing']['platform'],
                      bot_config.get(
                          'chromium_config_kwargs', {}).get('TARGET_BITS', 64)) +
-        props(mastername=mastername, buildername=buildername)
+        props(mainname=mainname, buildername=buildername)
       )
 
   yield (
     api.test('force_swarming') +
     api.platform('linux', 64) +
-    api.properties.generic(mastername='tryserver.chromium.linux',
+    api.properties.generic(mainname='tryserver.chromium.linux',
                            buildername='linux_chromium_rel_ng') +
     api.override_step_data('read test spec', api.json.output({
         'Linux Tests': {
@@ -1029,7 +1029,7 @@ def GenTests(api):
   # retries at all.
   yield (
     api.test('persistent_failure_and_runhooks_2_fail_test') +
-    props(buildername='win_chromium_rel', mastername='tryserver.chromium.win') +
+    props(buildername='win_chromium_rel', mainname='tryserver.chromium.win') +
     api.platform.name('win') +
     api.override_step_data('base_unittests (with patch)',
                            canned_test(passing=False)) +
@@ -1052,7 +1052,7 @@ def GenTests(api):
     yield (
       api.test(_sanitize_nonalpha(step) + '_failure') +
       props(buildername='win_no_bot_update',
-            mastername='tryserver.chromium.win') +
+            mainname='tryserver.chromium.win') +
       api.platform.name('win') +
       api.step_data(step, retcode=1)
     )
@@ -1060,7 +1060,7 @@ def GenTests(api):
   yield (
     api.test('runhooks_failure') +
     props(buildername='win_chromium_rel',
-          mastername='tryserver.chromium.win') +
+          mainname='tryserver.chromium.win') +
     api.platform.name('win') +
     api.step_data('gclient runhooks (with patch)', retcode=1) +
     api.step_data('gclient runhooks (without patch)', retcode=1)
@@ -1069,7 +1069,7 @@ def GenTests(api):
   yield (
     api.test('compile_failure') +
     props(buildername='win_chromium_rel',
-          mastername='tryserver.chromium.win') +
+          mainname='tryserver.chromium.win') +
     api.platform.name('win') +
     api.step_data('compile (with patch)', retcode=1)
   )
@@ -1077,7 +1077,7 @@ def GenTests(api):
   yield (
     api.test('compile_failure_without_patch') +
     props(buildername='win_chromium_rel',
-          mastername='tryserver.chromium.win') +
+          mainname='tryserver.chromium.win') +
     api.platform.name('win') +
     api.step_data('compile (with patch)', retcode=1) +
     api.step_data('compile (without patch)', retcode=1)
@@ -1094,7 +1094,7 @@ def GenTests(api):
 
   yield (
     api.test('arm') +
-    api.properties.generic(mastername='tryserver.chromium.linux',
+    api.properties.generic(mainname='tryserver.chromium.linux',
                            buildername='linux_arm_cross_compile') +
     api.platform('linux', 64) +
     api.override_step_data('read test spec', api.json.output({

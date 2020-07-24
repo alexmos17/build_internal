@@ -6,14 +6,14 @@
 
 import os
 
-from master import chromium_step
+from main import chromium_step
 
 import config
-from master.factory import gclient_factory
+from main.factory import gclient_factory
 
 
 class GYPFactory(gclient_factory.GClientFactory):
-  svn_url = config.Master.gyp_trunk_url
+  svn_url = config.Main.gyp_trunk_url
 
   def __init__(self, build_dir, **kw):
     main = gclient_factory.GClientSolution(self.svn_url)

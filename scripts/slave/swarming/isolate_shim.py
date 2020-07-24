@@ -11,10 +11,10 @@ Intercepts the --build-dir and --target flags and inserts them into the
 
 import os
 import sys
-from slave import build_directory
+from subordinate import build_directory
 from common import chromium_utils
 
-from slave.swarming import swarming_utils
+from subordinate.swarming import swarming_utils
 
 
 def InterceptFlag(flag, args):

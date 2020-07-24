@@ -5,8 +5,8 @@
 import math
 import collections
 
-from slave import recipe_api
-from slave.recipe_modules.v8 import builders
+from subordinate import recipe_api
+from subordinate.recipe_modules.v8 import builders
 
 
 # With more than 23 letters, labels are to big for buildbot's popup boxes.
@@ -177,18 +177,18 @@ class V8Api(recipe_api.RecipeApi):
   def apply_bot_config(self, builders):
     """Entry method for using the v8 api.
 
-    Requires the presence of a bot_config dict for any master/builder pair.
+    Requires the presence of a bot_config dict for any main/builder pair.
     This bot_config will be used to refine other api methods.
     """
 
     self.m.step.auto_resolve_conflicts = True
-    mastername = self.m.properties.get('mastername')
+    mainname = self.m.properties.get('mainname')
     buildername = self.m.properties.get('buildername')
-    master_dict = builders.get(mastername, {})
-    self.bot_config = master_dict.get('builders', {}).get(buildername)
+    main_dict = builders.get(mainname, {})
+    self.bot_config = main_dict.get('builders', {}).get(buildername)
     assert self.bot_config, (
-        'Unrecognized builder name %r for master %r.' % (
-            buildername, mastername))
+        'Unrecognized builder name %r for main %r.' % (
+            buildername, mainname))
 
     self.set_config('v8',
                     optional=True,
@@ -200,7 +200,7 @@ class V8Api(recipe_api.RecipeApi):
     for c in self.bot_config.get('v8_apply_config', []):
       self.apply_config(c)
     if self.c.nacl.update_nacl_sdk:
-      self.c.nacl.NACL_SDK_ROOT = str(self.m.path['slave_build'].join(
+      self.c.nacl.NACL_SDK_ROOT = str(self.m.path['subordinate_build'].join(
           'nacl_sdk', 'pepper_current'))
     # Test-specific configurations.
     for t in self.bot_config.get('tests', []):
@@ -222,8 +222,8 @@ class V8Api(recipe_api.RecipeApi):
         update_step = self.m.gclient.checkout(revert=revert)
       except self.m.step.StepFailure as f:
         # TODO(phajdan.jr): Remove the workaround, http://crbug.com/357767 .
-        self.m.path.rmcontents('slave build directory',
-                               self.m.path['slave_build']),
+        self.m.path.rmcontents('subordinate build directory',
+                               self.m.path['subordinate_build']),
         update_step = self.m.gclient.checkout()
     else:
       update_step = self.m.gclient.checkout()
@@ -283,9 +283,9 @@ class V8Api(recipe_api.RecipeApi):
   def update_nacl_sdk(self):
     return self.m.python(
       'update NaCl SDK',
-      self.m.path['build'].join('scripts', 'slave', 'update_nacl_sdk.py'),
+      self.m.path['build'].join('scripts', 'subordinate', 'update_nacl_sdk.py'),
       ['--pepper-channel', self.c.nacl.update_nacl_sdk],
-      cwd=self.m.path['slave_build'],
+      cwd=self.m.path['subordinate_build'],
     )
 
   def tryserver_lkgr_fallback(self):
@@ -377,7 +377,7 @@ class V8Api(recipe_api.RecipeApi):
   def presubmit(self):
     self.m.python(
       'Presubmit',
-      self.m.path['build'].join('scripts', 'slave', 'v8', 'v8testing.py'),
+      self.m.path['build'].join('scripts', 'subordinate', 'v8', 'v8testing.py'),
       ['--testname', 'presubmit'],
       cwd=self.m.path['checkout'],
     )
@@ -407,7 +407,7 @@ class V8Api(recipe_api.RecipeApi):
 
   def gc_mole(self):
     # TODO(machenbach): Make gcmole work with absolute paths. Currently, a
-    # particular clang version is installed on one slave in '/b'.
+    # particular clang version is installed on one subordinate in '/b'.
     env = {
       'CLANG_BIN': (
         self.m.path.join('..', '..', '..', '..', '..', 'gcmole', 'bin')
@@ -606,7 +606,7 @@ class V8Api(recipe_api.RecipeApi):
     try:
       self.m.python(
         name,
-        self.m.path['build'].join('scripts', 'slave', 'v8', 'v8testing.py'),
+        self.m.path['build'].join('scripts', 'subordinate', 'v8', 'v8testing.py'),
         full_args,
         cwd=self.m.path['checkout'],
         env=env,

@@ -12,10 +12,10 @@ import sys
 # pylint: disable=W0403
 import xvfb
 
-from slave import build_directory
+from subordinate import build_directory
 
 def main():
-  parser = optparse.OptionParser(usage='%prog [options] slavename')
+  parser = optparse.OptionParser(usage='%prog [options] subordinatename')
 
   parser.add_option('--build-dir', help='ignored')
   parser.add_option('--start', action='store_true', help='Start xvfb')
@@ -25,17 +25,17 @@ def main():
   options.build_dir = build_directory.GetBuildOutputDirectory()
 
   if len(args) != 1:
-    parser.error('Please specify the slave name')
-  slave_name = args[0]
+    parser.error('Please specify the subordinate name')
+  subordinate_name = args[0]
 
   if (not options.start) and (not options.stop):
     parser.error('Use one of --start OR --stop')
 
   if options.start:
-    xvfb.StartVirtualX(slave_name, options.build_dir)
+    xvfb.StartVirtualX(subordinate_name, options.build_dir)
 
   if options.stop:
-    xvfb.StopVirtualX(slave_name)
+    xvfb.StopVirtualX(subordinate_name)
 
   return 0
 

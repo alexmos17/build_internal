@@ -3,7 +3,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""A tool to extract a build, executed by a buildbot slave.
+"""A tool to extract a build, executed by a buildbot subordinate.
 """
 
 import optparse
@@ -14,8 +14,8 @@ import traceback
 import urllib
 
 from common import chromium_utils
-from slave import build_directory
-from slave import slave_utils
+from subordinate import build_directory
+from subordinate import subordinate_utils
 
 class ExtractHandler(object):
   def __init__(self, url, archive_name):
@@ -25,7 +25,7 @@ class ExtractHandler(object):
 
 class GSHandler(ExtractHandler):
   def download(self):
-    status = slave_utils.GSUtilCopy(self.url, '.')
+    status = subordinate_utils.GSUtilCopy(self.url, '.')
     if 0 != status:
       return False
     try:
@@ -65,7 +65,7 @@ def GetBuildUrl(options, build_revision, webkit_revision=None):
   if options.build_archive_url:
     return options.build_archive_url, None
 
-  base_filename, version_suffix = slave_utils.GetZipFileNames(
+  base_filename, version_suffix = subordinate_utils.GetZipFileNames(
       options.build_properties, build_revision, webkit_revision, extract=True)
 
   replace_dict = dict(options.build_properties)
@@ -76,7 +76,7 @@ def GetBuildUrl(options, build_revision, webkit_revision=None):
   replace_dict['base_filename'] = base_filename
   url = options.build_url or options.factory_properties.get('build_url')
   if not url:
-    url = ('http://%(parentslavename)s/b/build/slave/%(parent_builddir)s/'
+    url = ('http://%(parentsubordinatename)s/b/build/subordinate/%(parent_builddir)s/'
            'chrome_staging')
   if url[-4:] != '.zip': # assume filename not specified
     # Append the filename to the base URL. First strip any trailing slashes.
@@ -104,7 +104,7 @@ def real_main(options):
 
   src_dir = os.path.dirname(abs_build_dir)
   if not options.build_revision and not options.build_archive_url:
-    (build_revision, webkit_revision) = slave_utils.GetBuildRevisions(
+    (build_revision, webkit_revision) = subordinate_utils.GetBuildRevisions(
         src_dir, options.webkit_dir, options.revision_dir)
   else:
     build_revision = options.build_revision
@@ -133,7 +133,7 @@ def real_main(options):
         if (options.factory_properties.get('halt_on_missing_build', False) and
             'revision' in options.build_properties and
             options.build_properties['revision'] != ''):
-          return slave_utils.ERROR_EXIT_CODE
+          return subordinate_utils.ERROR_EXIT_CODE
         failure = True
 
     # If the versioned url failed, we try to get the latest build.
@@ -180,11 +180,11 @@ def real_main(options):
 
     if failure:
       # We successfully extracted the archive, but it was the generic one.
-      return slave_utils.WARNING_EXIT_CODE
+      return subordinate_utils.WARNING_EXIT_CODE
     return 0
 
   # If we get here, that means that it failed 3 times. We return a failure.
-  return slave_utils.ERROR_EXIT_CODE
+  return subordinate_utils.ERROR_EXIT_CODE
 
 
 def main():

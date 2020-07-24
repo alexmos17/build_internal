@@ -9,7 +9,7 @@
 import re
 import subprocess
 
-from slave import slave_utils
+from subordinate import subordinate_utils
 
 # workaround for the fact that default list arguments are dangerous in python
 DEFAULT_ADDITIONAL_SVN_FLAGS = ['--no-auth-cache', '--non-interactive']
@@ -45,7 +45,7 @@ class Svn(object):
     self._directory = directory
     self._username = username
     self._password = password
-    self._svn_binary = slave_utils.SubversionExe()
+    self._svn_binary = subordinate_utils.SubversionExe()
     # workaround for the fact that default list args are dangerous in python
     if additional_svn_flags is None:
       self._additional_svn_flags = DEFAULT_ADDITIONAL_SVN_FLAGS

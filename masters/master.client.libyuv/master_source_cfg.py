@@ -4,7 +4,7 @@
 
 from common import chromium_utils
 
-from master import build_utils
+from main import build_utils
 
 from buildbot.changes import svnpoller
 
@@ -22,7 +22,7 @@ def TrunkOnlyFileSplitter(path):
 
 def Update(config, c):
   poller = svnpoller.SVNPoller(
-      svnurl=config.Master.libyuv_url,
+      svnurl=config.Main.libyuv_url,
       svnbin=chromium_utils.SVN_BIN,
       split_file=TrunkOnlyFileSplitter,
       pollinterval=30,

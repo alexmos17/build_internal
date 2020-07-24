@@ -24,19 +24,19 @@ class SSHFlavorUtils(default_flavor.DefaultFlavorUtils):
   @property
   def host(self):
     if not self._host:
-      self._host = self._skia_api.c.slave_cfg['ssh_host']
+      self._host = self._skia_api.c.subordinate_cfg['ssh_host']
     return self._host
 
   @property
   def port(self):
     if not self._port:
-      self._port = self._skia_api.c.slave_cfg.get('ssh_port', DEFAULT_PORT)
+      self._port = self._skia_api.c.subordinate_cfg.get('ssh_port', DEFAULT_PORT)
     return self._port
 
   @property
   def user(self):
     if not self._user:
-      self._user = self._skia_api.c.slave_cfg.get('ssh_user', DEFAULT_USER)
+      self._user = self._skia_api.c.subordinate_cfg.get('ssh_user', DEFAULT_USER)
     return self._user
 
   def ssh(self, name, cmd, **kwargs):

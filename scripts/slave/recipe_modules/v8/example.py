@@ -34,12 +34,12 @@ def GenTests(api):
     api.test('perf_failures') +
     api.v8(perf_failures=True) +
     api.step_data('Example1', retcode=1) +
-    api.properties.generic(mastername='Fake_Master',
+    api.properties.generic(mainname='Fake_Main',
                            buildername='Fake Builder',
                            revision='20123')
   )
   yield (
     api.test('forced_build') +
-    api.properties.generic(mastername='Fake_Master',
+    api.properties.generic(mainname='Fake_Main',
                            buildername='Fake Builder')
   )

@@ -241,10 +241,10 @@ BUILDERS = {
 
 
 def GenSteps(api):
-  mastername = api.properties.get('mastername')
+  mainname = api.properties.get('mainname')
   buildername = api.properties.get('buildername')
-  master_dict = BUILDERS.get(mastername, {})
-  bot_config = master_dict.get('builders', {}).get(buildername)
+  main_dict = BUILDERS.get(mainname, {})
+  bot_config = main_dict.get('builders', {}).get(buildername)
 
   api.chromium.set_config('blink',
                           **bot_config.get('chromium_config_kwargs', {}))
@@ -261,9 +261,9 @@ def GenSteps(api):
   if 'oilpan' in buildername:
     api.chromium.apply_config('oilpan')
 
-  webkit_lint = api.path['build'].join('scripts', 'slave', 'chromium',
+  webkit_lint = api.path['build'].join('scripts', 'subordinate', 'chromium',
                                        'lint_test_files_wrapper.py')
-  webkit_python_tests = api.path['build'].join('scripts', 'slave', 'chromium',
+  webkit_python_tests = api.path['build'].join('scripts', 'subordinate', 'chromium',
                                                'test_webkitpy_wrapper.py')
 
   # Set patch_root used when applying the patch after checkout. Default None
@@ -342,15 +342,15 @@ def GenTests(api):
   with_patch = 'webkit_tests (with patch)'
   without_patch = 'webkit_tests (without patch)'
 
-  def properties(mastername, buildername, **kwargs):
-    return api.properties.tryserver(mastername=mastername,
+  def properties(mainname, buildername, **kwargs):
+    return api.properties.tryserver(mainname=mainname,
                                     buildername=buildername,
                                     root='src/third_party/WebKit',
                                     **kwargs)
 
-  for mastername, master_config in BUILDERS.iteritems():
-    for buildername, bot_config in master_config['builders'].iteritems():
-      test_name = 'full_%s_%s' % (_sanitize_nonalpha(mastername),
+  for mainname, main_config in BUILDERS.iteritems():
+    for buildername, bot_config in main_config['builders'].iteritems():
+      test_name = 'full_%s_%s' % (_sanitize_nonalpha(mainname),
                                   _sanitize_nonalpha(buildername))
       tests = []
       if bot_config['compile_only']:
@@ -368,7 +368,7 @@ def GenTests(api):
 
       for test in tests:
         test += (
-          properties(mastername, buildername) +
+          properties(mainname, buildername) +
           api.platform(bot_config['testing']['platform'],
                        bot_config.get(
                            'chromium_config_kwargs', {}).get('TARGET_BITS', 64))

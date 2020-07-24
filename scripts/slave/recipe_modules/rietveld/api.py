@@ -4,7 +4,7 @@
 
 import urlparse
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 class RietveldApi(recipe_api.RecipeApi):
   def calculate_issue_root(self):

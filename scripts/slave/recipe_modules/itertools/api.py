@@ -1,4 +1,4 @@
-from slave import recipe_api
+from subordinate import recipe_api
 
 import itertools
 

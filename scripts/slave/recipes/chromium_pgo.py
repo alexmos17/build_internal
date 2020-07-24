@@ -77,15 +77,15 @@ def GenSteps(api):
 
 
 def GenTests(api):
-  mastername = 'chromium.fyi'
+  mainname = 'chromium.fyi'
   buildername = 'Chromium Win PGO Builder'
 
   def _sanitize_nonalpha(text):
     return ''.join(c if c.isalnum() else '_' for c in text)
 
   yield (
-    api.test('full_%s_%s' % (_sanitize_nonalpha(mastername),
+    api.test('full_%s_%s' % (_sanitize_nonalpha(mainname),
                              _sanitize_nonalpha(buildername))) +
-    api.properties.generic(mastername=mastername, buildername=buildername) +
+    api.properties.generic(mainname=mainname, buildername=buildername) +
     api.platform('win', 32)
   )

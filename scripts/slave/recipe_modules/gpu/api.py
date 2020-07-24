@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 import common
 
@@ -84,7 +84,7 @@ class GpuApi(recipe_api.RecipeApi):
     # Chromium on all platforms.
     if self.is_fyi_waterfall:
       self.m.gclient.c.solutions[0].custom_vars['angle_revision'] = (
-          'refs/remotes/origin/master')
+          'refs/remotes/origin/main')
 
     self.m.step.auto_resolve_conflicts = True
 
@@ -94,7 +94,7 @@ class GpuApi(recipe_api.RecipeApi):
     """Returns the revision of the current build. The pixel and maps
     tests use this value when uploading error images to cloud storage,
     only for naming purposes. This could be changed to use a different
-    identifier (for example, the build number on the slave), but using
+    identifier (for example, the build number on the subordinate), but using
     this value is convenient for easily identifying results."""
     # On the Blink bots, the 'revision' property alternates between a
     # Chromium and a Blink revision, so is not a good value to use.
@@ -132,21 +132,21 @@ class GpuApi(recipe_api.RecipeApi):
     return self._bot_update.presentation.properties['got_webkit_revision']
 
   @property
-  def _master_class_name_for_testing(self):
-    """Allows the class name of the build master to be mocked for
+  def _main_class_name_for_testing(self):
+    """Allows the class name of the build main to be mocked for
     local testing by setting the build property
-    "master_class_name_for_testing" on the command line. The bots do
+    "main_class_name_for_testing" on the command line. The bots do
     not need to, and should not, set this property. Class names follow
     the naming convention like "ChromiumWebkit" and "ChromiumGPU".
     This value is used by the flakiness dashboard when uploading
-    results. See the documentation of the --master-class-name argument
+    results. See the documentation of the --main-class-name argument
     to runtest.py for full documentation."""
-    return self.m.properties.get('master_class_name_for_testing')
+    return self.m.properties.get('main_class_name_for_testing')
 
   @property
   def is_fyi_waterfall(self):
     """Indicates whether the recipe is running on the GPU FYI waterfall."""
-    return self.m.properties['mastername'] == 'chromium.gpu.fyi'
+    return self.m.properties['mainname'] == 'chromium.gpu.fyi'
 
   def checkout_steps(self):
     self._bot_update = self.m.bot_update.ensure_checkout(force=True)
@@ -196,7 +196,7 @@ class GpuApi(recipe_api.RecipeApi):
 
   def test_steps(self):
     # TODO(kbr): currently some properties are passed to runtest.py via
-    # factory_properties in the master.cfg: generate_gtest_json,
+    # factory_properties in the main.cfg: generate_gtest_json,
     # show_perf_results, test_results_server, and perf_id. runtest.py
     # should be modified to take these arguments on the command line,
     # and the setting of these properties should happen in this recipe
@@ -262,7 +262,7 @@ class GpuApi(recipe_api.RecipeApi):
     # tester bots send their results to cloud storage.
     #
     # NOTE that ALL of the bots need to share a bucket. They can't be split
-    # by mastername/waterfall, because the try servers are on a different
+    # by mainname/waterfall, because the try servers are on a different
     # waterfall (tryserver.chromium.*) than the other test bots (chromium.gpu
     # and chromium.webkit, as of this writing). This means there will be
     # races between bots with identical OS/GPU combinations, on different
@@ -355,7 +355,7 @@ class GpuApi(recipe_api.RecipeApi):
     assert test.endswith('test') or test.endswith('tests')
     # TODO(kbr): turn this into a temporary path. There were problems
     # with the recipe simulation test in doing so and cleaning it up.
-    results_directory = self.m.path['slave_build'].join(
+    results_directory = self.m.path['subordinate_build'].join(
       'gtest-results', test)
     try:
       self.m.isolate.runtest(
@@ -366,7 +366,7 @@ class GpuApi(recipe_api.RecipeApi):
         test_type=test,
         generate_json_file=True,
         results_directory=results_directory,
-        master_class_name=self._master_class_name_for_testing,
+        main_class_name=self._main_class_name_for_testing,
         **kwargs)
     except self.m.step.StepFailure:
       # Return test name in the event of failure
@@ -389,7 +389,7 @@ class GpuApi(recipe_api.RecipeApi):
         self.get_webkit_revision(),
         args=test_args,
         name=name,
-        master_class_name=self._master_class_name_for_testing,
+        main_class_name=self._main_class_name_for_testing,
         spawn_dbus=True,
         **kwargs)
     except self.m.step.StepFailure:

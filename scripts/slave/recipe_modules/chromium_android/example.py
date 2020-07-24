@@ -143,7 +143,7 @@ def GenTests(api):
   def properties_for(buildername):
     return api.properties.generic(
         buildername=buildername,
-        slavename='tehslave',
+        subordinatename='tehsubordinate',
         repo_name='src/repo',
         patch_url='https://the.patch.url/the.patch',
         repo_url='svn://svn.chromium.org/chrome/trunk/src',

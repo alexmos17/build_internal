@@ -1,4 +1,4 @@
-from slave import recipe_test_api
+from subordinate import recipe_test_api
 
 class AOSPTestApi(recipe_test_api.RecipeTestApi):
   def calculate_blacklist(self):

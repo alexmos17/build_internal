@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import master_config
-from master.factory import chromeos_factory
+from main import main_config
+from main.factory import chromeos_factory
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 F = helper.Factory
 S = helper.Scheduler
@@ -18,7 +18,7 @@ defaults['category'] = '2chromium'
 # TODO(petermayo): Make this use chrome CROS Manifest too.
 
 _CHROMIUM_SCHEDULER_NAME = 'chromium_cros'
-S(name=_CHROMIUM_SCHEDULER_NAME, branch='master', treeStableTimer=60)
+S(name=_CHROMIUM_SCHEDULER_NAME, branch='main', treeStableTimer=60)
 
 def Builder(dname, sname, flavor, root, board):
   fname = '%s-%s' % (sname, flavor)
@@ -40,5 +40,5 @@ Builder('AMD64', 'amd64', 'chromium', 'shared_external', 'amd64-generic')
 Builder('Daisy', 'daisy', 'chromium', 'shared_external', 'daisy')
 
 
-def Update(_config, _active_master, c):
+def Update(_config, _active_main, c):
   return helper.Update(c)

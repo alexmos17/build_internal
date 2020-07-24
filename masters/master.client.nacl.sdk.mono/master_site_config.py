@@ -2,13 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
-class NativeClientSDKMono(Master.NaClBase):
+class NativeClientSDKMono(Main.NaClBase):
   project_name = 'NativeClientSDKMono'
-  master_port = 8050
-  slave_port = 8150
-  master_port_alt = 8250
+  main_port = 8050
+  subordinate_port = 8150
+  main_port_alt = 8250
   buildbot_url = 'http://build.chromium.org/p/client.nacl.sdk.mono/'

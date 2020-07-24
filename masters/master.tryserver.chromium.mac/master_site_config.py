@@ -2,15 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
-class TryServerChromiumMac(Master.Master4a):
+class TryServerChromiumMac(Main.Main4a):
   project_name = 'Chromium Mac Try Server'
-  master_port = 8091
-  slave_port = 8191
-  master_port_alt = 8291
+  main_port = 8091
+  subordinate_port = 8191
+  main_port_alt = 8291
   try_job_port = 8391
   # Select tree status urls and codereview location.
   reply_to = 'chrome-troopers+tryserver@google.com'

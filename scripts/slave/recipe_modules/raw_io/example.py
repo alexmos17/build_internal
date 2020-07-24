@@ -47,7 +47,7 @@ def GenSteps(api):
   # leak_to coverage.
   step_result = api.step(
       'leak stdout', ['echo', 'leaking'],
-      stdout=api.raw_io.output(leak_to=api.path['slave_build'].join('out.txt')),
+      stdout=api.raw_io.output(leak_to=api.path['subordinate_build'].join('out.txt')),
       step_test_data=(
         lambda: api.raw_io.test_api.stream_output('leaking\n')))
   assert step_result.stdout == 'leaking\n'

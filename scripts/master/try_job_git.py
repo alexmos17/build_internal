@@ -9,9 +9,9 @@ from twisted.python import log
 
 from common import chromium_utils
 
-from master.chromium_git_poller_bb8 import ChromiumGitPoller
-from master.try_job_base import text_to_dict
-from master.try_job_repo import TryJobRepoBase
+from main.chromium_git_poller_bb8 import ChromiumGitPoller
+from main.try_job_base import text_to_dict
+from main.try_job_repo import TryJobRepoBase
 
 class GitPoller(ChromiumGitPoller):
   """A hook in gitpoller.GitPoller for TryJobGit.
@@ -26,7 +26,7 @@ class GitPoller(ChromiumGitPoller):
   def add_change(self, **kwargs):
     """Passes the changes to TryJobGit.
 
-    Instead of submitting the change to the master, pass them to
+    Instead of submitting the change to the main, pass them to
     TryJobGit. We don't want buildbot to see these changes.
     """
     return self.try_job.process_commit(**kwargs)
@@ -62,8 +62,8 @@ class TryJobGit(TryJobRepoBase):
     # pylint: disable=E1101
     options = self.parse_options(text_to_dict(comments))
 
-    # Read ref name from the 'ref' file in the master branch.
-    # A slave will pull this ref.
+    # Read ref name from the 'ref' file in the main branch.
+    # A subordinate will pull this ref.
     wfd = defer.waitForDeferred(
         self.getProcessOutput(['show', '%s:ref' % revision]))
     yield wfd

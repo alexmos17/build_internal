@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave import recipe_api
-from slave import recipe_util
+from subordinate import recipe_api
+from subordinate import recipe_util
 
 
 class SwarmingClientApi(recipe_api.RecipeApi):
@@ -39,7 +39,7 @@ class SwarmingClientApi(recipe_api.RecipeApi):
     # need to pass in some recent legal revision for this property.
     if revision is None:
       revision = self.m.properties['parent_got_swarming_client_revision']
-    self._client_path = self.m.path['slave_build'].join('swarming.client')
+    self._client_path = self.m.path['subordinate_build'].join('swarming.client')
     self.m.git.checkout(
         url='https://chromium.googlesource.com/external/swarming.client.git',
         ref=revision,

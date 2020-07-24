@@ -12,7 +12,7 @@ import re
 import subprocess
 import sys
 
-from slave import build_directory
+from subordinate import build_directory
 
 
 def _ParseOptions():

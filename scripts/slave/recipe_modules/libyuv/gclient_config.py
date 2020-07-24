@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 from RECIPE_MODULES.gclient import CONFIG_CTX
-from slave.recipe_modules.gclient.config import ChromiumSvnSubURL
+from subordinate.recipe_modules.gclient.config import ChromiumSvnSubURL
 
 
 @CONFIG_CTX()

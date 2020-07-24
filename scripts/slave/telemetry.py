@@ -11,7 +11,7 @@ import os
 import sys
 
 from common import chromium_utils
-from slave import build_directory
+from subordinate import build_directory
 
 
 SCRIPT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -21,10 +21,10 @@ def _GetPythonTestCommand(py_script, target, arg_list=None,
                           wrapper_args=None, fp=None):
   """Synthesizes a command line to run runtest.py."""
   cmd = [sys.executable,
-         os.path.join(SCRIPT_DIR, 'slave', 'runtest.py'),
+         os.path.join(SCRIPT_DIR, 'subordinate', 'runtest.py'),
          '--run-python-script',
          '--target', target,
-         '--no-xvfb'] #  telemetry.py should be run by a 'master' runtest.py
+         '--no-xvfb'] #  telemetry.py should be run by a 'main' runtest.py
                       #  which starts xvfb on linux.
   if fp:
     cmd.extend(["--factory-properties=%s" % json.dumps(fp)])

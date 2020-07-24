@@ -13,7 +13,7 @@ import os
 import re
 import sys
 
-from slave import build_directory
+from subordinate import build_directory
 
 
 def hash_file(filepath):

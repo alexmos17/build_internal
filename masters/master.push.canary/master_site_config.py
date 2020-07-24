@@ -2,14 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
-class PushCanary(Master.Base):
+class PushCanary(Main.Base):
   project_name = 'Chromium PushCanary'
-  master_host = 'localhost'
-  master_port = 8081
-  slave_port = 8181
-  master_port_alt = 8281
+  main_host = 'localhost'
+  main_port = 8081
+  subordinate_port = 8181
+  main_port_alt = 8281
   buildbot_url = 'http://localhost:8080/'

@@ -20,7 +20,7 @@ from common import chromium_utils
 from common import find_depot_tools  # pylint: disable=W0611
 
 from common import annotator
-from slave.swarming import swarming_utils
+from subordinate.swarming import swarming_utils
 
 # From depot tools/
 import fix_encoding
@@ -278,25 +278,25 @@ def process_build_properties(options):
   # target_os is not defined when using a normal builder, contrary to a
   # xx_swarm_triggered buildbot<->swarming builder, and it's not needed since
   # the OS match, it's defined in builder/tester configurations.
-  slave_os = options.build_properties.get('target_os', sys.platform)
+  subordinate_os = options.build_properties.get('target_os', sys.platform)
   priority = swarming_utils.build_to_priority(options.build_properties)
   steps = determine_steps_to_run(
       options.build_properties.get('swarm_hashes', {}),
       options.build_properties.get('testfilter', ['defaulttests']))
   builder = options.build_properties.get('buildername', 'unknown')
   build_number = options.build_properties.get('buildnumber', 0)
-  return slave_os, priority, steps, builder, build_number
+  return subordinate_os, priority, steps, builder, build_number
 
 
 def main(args):
-  """Note: this is solely to run the current master's code and can totally
+  """Note: this is solely to run the current main's code and can totally
   differ from the underlying script flags.
 
   To update these flags:
   - Update the following code to support both the previous flag and the new
     flag.
-  - Change scripts/master/factory/swarm_commands.py to pass the new flag.
-  - Restart all the masters using swarming.
+  - Change scripts/main/factory/swarm_commands.py to pass the new flag.
+  - Restart all the mains using swarming.
   - Remove the old flag from this code.
   """
   client = swarming_utils.find_client(os.getcwd())
@@ -323,16 +323,16 @@ def main(args):
 
   logging.basicConfig(level=logging.DEBUG if options.verbose else logging.ERROR)
   # Loads the other flags implicitly.
-  slave_os, priority, steps, builder, build_number = process_build_properties(
+  subordinate_os, priority, steps, builder, build_number = process_build_properties(
       options)
-  logging.info('To run: %s, %s, %s', slave_os, priority, steps)
+  logging.info('To run: %s, %s, %s', subordinate_os, priority, steps)
   if not steps:
     print('Nothing to trigger')
     annotator.AdvancedAnnotationStep(sys.stdout, False).step_warnings()
     return 0
   print('Selected tests:')
   print('\n'.join(' %s' % s for s in sorted(steps)))
-  selected_os = swarming_utils.OS_MAPPING[slave_os]
+  selected_os = swarming_utils.OS_MAPPING[subordinate_os]
   print('Selected OS: %s' % selected_os)
   return drive_many(
       client,

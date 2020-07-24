@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 from buildbot.status.builder import FAILURE
-from master import chromium_notifier
-from master import master_utils
+from main import chromium_notifier
+from main import main_utils
 
 # This is the list of the builder categories and the corresponding critical
 # steps. If one critical step fails, the blame list will be notified.
@@ -66,23 +66,23 @@ class V8Notifier(chromium_notifier.ChromiumNotifier):
     return results[0] == FAILURE
 
 
-def Update(config, active_master, c):
+def Update(config, active_main, c):
   c['status'].append(V8Notifier(
-      fromaddr=active_master.from_address,
+      fromaddr=active_main.from_address,
       categories_steps=categories_steps,
       exclusions=exclusions,
-      relayhost=config.Master.smtp,
+      relayhost=config.Main.smtp,
       sendToInterestedUsers=True,
       status_header='buildbot failure in %(project)s on %(builder)s, %(steps)s',
-      lookup=master_utils.FilterDomain(),
+      lookup=main_utils.FilterDomain(),
       forgiving_steps=forgiving_steps))
   c['status'].append(V8Notifier(
-      fromaddr=active_master.from_address,
+      fromaddr=active_main.from_address,
       categories_steps=x87_categories_steps,
       exclusions={},
-      relayhost=config.Master.smtp,
+      relayhost=config.Main.smtp,
       sendToInterestedUsers=False,
       extraRecipients=['weiliang.lin@intel.com', 'chunyang.dai@intel.com'],
       status_header='buildbot failure in %(project)s on %(builder)s, %(steps)s',
-      lookup=master_utils.FilterDomain(),
+      lookup=main_utils.FilterDomain(),
       forgiving_steps=forgiving_steps))

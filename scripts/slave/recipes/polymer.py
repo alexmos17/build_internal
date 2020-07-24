@@ -42,7 +42,7 @@ def _CheckoutSteps(api):
     if name == 'polymer-dev':
       cfg.solutions.insert(0, {})
       soln = cfg.solutions[0]
-      soln.revision = 'origin/master'
+      soln.revision = 'origin/main'
     else:
       soln = cfg.solutions.add()
     soln.name = name
@@ -65,12 +65,12 @@ def GenSteps(api):
     return None
   _CheckoutSteps(api)
   this_repo = api.properties['buildername'].split()[0]
-  api.path['checkout'] = api.path['slave_build'].join(this_repo)
+  api.path['checkout'] = api.path['subordinate_build'].join(this_repo)
 
   tmp_path = ''
   tmp_args = []
   if not api.platform.is_win:
-    tmp_path = api.path['slave_build'].join('.tmp')
+    tmp_path = api.path['subordinate_build'].join('.tmp')
     api.path.makedirs('tmp', tmp_path)
     tmp_args = ['--tmp', tmp_path]
 
@@ -120,7 +120,7 @@ def GenTests(api):
       api.properties.scheduled(
         buildername='polymer %s' % plat,
         repository='https://github.com/Polymer/polymer-dev',
-        revision='origin/master',
+        revision='origin/main',
       ) +
       api.platform.name(plat)
     )
@@ -131,7 +131,7 @@ def GenTests(api):
     api.properties.scheduled(
       buildername='polymer linux',
       repository='https://github.com/Polymer/platform-dev',
-      revision='origin/master',
+      revision='origin/main',
       scheduler='polymer-platform',
     )
   )

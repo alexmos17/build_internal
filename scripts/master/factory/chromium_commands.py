@@ -16,13 +16,13 @@ from buildbot.steps import trigger
 from buildbot.steps.transfer import FileUpload
 
 import config
-from master import chromium_step
-from master.factory import commands
-from master.factory import swarm_commands
+from main import chromium_step
+from main.factory import commands
+from main.factory import swarm_commands
 
-from master.log_parser import archive_command
-from master.log_parser import retcode_command
-from master.log_parser import webkit_test_command
+from main.log_parser import archive_command
+from main.log_parser import retcode_command
+from main.log_parser import webkit_test_command
 
 
 class ChromiumCommands(commands.FactoryCommands):
@@ -36,11 +36,11 @@ class ChromiumCommands(commands.FactoryCommands):
 
     self._target_os = target_os
 
-    # Where the chromium slave scripts are.
+    # Where the chromium subordinate scripts are.
     self._chromium_script_dir = self.PathJoin(self._script_dir, 'chromium')
     self._private_script_dir = self.PathJoin(self._script_dir, '..', '..', '..',
                                              'build_internal', 'scripts',
-                                             'slave')
+                                             'subordinate')
     self._bb_dir = self.PathJoin('src', 'build', 'android', 'buildbot')
 
     # Create smaller name for the functions and vars to simplify the code below.
@@ -119,18 +119,18 @@ class ChromiumCommands(commands.FactoryCommands):
   # TODO(stip): not sure if this is relevant for new perf dashboard.
   def AddUploadPerfExpectations(self, factory_properties=None):
     """Adds a step to the factory to upload perf_expectations.json to the
-    master.
+    main.
     """
     perf_id = factory_properties.get('perf_id')
     if not perf_id:
       logging.error('Error: cannot upload perf expectations: perf_id is unset')
       return
-    slavesrc = 'src/tools/perf_expectations/perf_expectations.json'
-    masterdest = ('../../scripts/master/log_parser/perf_expectations/%s.json' %
+    subordinatesrc = 'src/tools/perf_expectations/perf_expectations.json'
+    maindest = ('../../scripts/main/log_parser/perf_expectations/%s.json' %
                   perf_id)
 
-    self._factory.addStep(FileUpload(slavesrc=slavesrc,
-                                     masterdest=masterdest))
+    self._factory.addStep(FileUpload(subordinatesrc=subordinatesrc,
+                                     maindest=maindest))
 
   def AddGenerateCodeTallyStep(self, dll):
     """Adds a step to run code tally over the given dll."""
@@ -164,7 +164,7 @@ class ChromiumCommands(commands.FactoryCommands):
 
     cmd = [self._python, launcher,
            self._python, convert_code_tally,
-           '--master_id', WithProperties('%(mastername)s'),
+           '--main_id', WithProperties('%(mainname)s'),
            '--builder_name', WithProperties('%(buildername)s'),
            '--build_number', WithProperties('%(buildnumber)s'),
            '--revision', WithProperties('%(got_revision)s'),
@@ -275,7 +275,7 @@ class ChromiumCommands(commands.FactoryCommands):
                           py_script=False, dashboard_url=None):
     """Return a runtest command suitable for most perf test steps."""
 
-    dashboard_url = dashboard_url or config.Master.dashboard_upload_url
+    dashboard_url = dashboard_url or config.Main.dashboard_upload_url
 
     tool_options = ['--annotate=' + log_type]
     tool_options.extend(tool_opts or [])
@@ -757,7 +757,7 @@ class ChromiumCommands(commands.FactoryCommands):
     args = args or []
     J = self.PathJoin
     if self._target_platform == 'win32':
-      py26 = J('src', 'third_party', 'python_26', 'python_slave.exe')
+      py26 = J('src', 'third_party', 'python_26', 'python_subordinate.exe')
       test_cmd = ['cmd', '/C'] + [py26, script] + args
     elif self._target_platform == 'darwin':
       test_cmd = ['python2.6', script] + args
@@ -1163,7 +1163,7 @@ class ChromiumCommands(commands.FactoryCommands):
     1. Generates the hash for each .isolated file and saves it in the build
        property 'swarm_hashes'.
     2. Triggers a dependent build which will actually talk to the Swarming
-       master.
+       main.
     """
     self._factory.properties.setProperty(
         'run_default_swarm_tests', run_default_swarm_tests, 'BuildFactory')
@@ -1282,7 +1282,7 @@ class ChromiumCommands(commands.FactoryCommands):
 def _GetArchiveUrl(archive_type, builder_name='%(build_name)s'):
   # The default builder name is dynamically filled in by
   # ArchiveCommand.createSummary.
-  return '%s/%s/%s' % (config.Master.archive_url, archive_type, builder_name)
+  return '%s/%s/%s' % (config.Main.archive_url, archive_type, builder_name)
 
 
 def _GetSnapshotUrl(factory_properties=None, builder_name='%(build_name)s'):

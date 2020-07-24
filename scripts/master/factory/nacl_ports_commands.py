@@ -6,8 +6,8 @@
 
 Contains the Native Client Ports specific commands. Based on commands.py"""
 
-from master import chromium_step
-from master.factory import commands
+from main import chromium_step
+from main.factory import commands
 
 import config
 
@@ -21,9 +21,9 @@ class NativeClientPortsCommands(commands.FactoryCommands):
                                       target_platform)
 
     # Where to point waterfall links for builds and test results.
-    self._archive_url = config.Master.archive_url
+    self._archive_url = config.Main.archive_url
 
-    # Where the slave scripts are.
+    # Where the subordinate scripts are.
     self._private_script_dir = self.PathJoin(self._script_dir, '..', 'private')
 
     self._build_dir = self.PathJoin('build', build_dir)

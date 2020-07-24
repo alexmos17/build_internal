@@ -70,7 +70,7 @@ def GenTests(api):
   yield (
     api.test('basic') +
     api.properties.tryserver(
-        mastername='tryserver.chromium.linux',
+        mainname='tryserver.chromium.linux',
         buildername='infra_tester',
         repo_name='infra') +
     diff('infra/stuff.py', 'go/src/infra/stuff.go')
@@ -79,7 +79,7 @@ def GenTests(api):
   yield (
     api.test('only_go') +
     api.properties.tryserver(
-        mastername='tryserver.chromium.linux',
+        mainname='tryserver.chromium.linux',
         buildername='infra_tester',
         repo_name='infra') +
     diff('go/src/infra/stuff.go')
@@ -88,7 +88,7 @@ def GenTests(api):
   yield (
     api.test('only_python') +
     api.properties.tryserver(
-        mastername='tryserver.chromium.linux',
+        mainname='tryserver.chromium.linux',
         buildername='infra_tester',
         repo_name='infra') +
     diff('infra/stuff.py')

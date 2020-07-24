@@ -3,29 +3,29 @@
 # found in the LICENSE file.
 
 
-"""Utilities for working with slaves.cfg files."""
+"""Utilities for working with subordinates.cfg files."""
 
 
 import os
 
 
-def _slaves_cfg_path(master_name):
+def _subordinates_cfg_path(main_name):
   return os.path.abspath(os.path.join(
       os.path.abspath(os.path.dirname(__file__)),
-      os.pardir, os.pardir, os.pardir, os.pardir, 'masters',
-      'master.' + master_name, 'slaves.cfg'))
+      os.pardir, os.pardir, os.pardir, os.pardir, 'mains',
+      'main.' + main_name, 'subordinates.cfg'))
 
 
-def get(master_name):
-  """Return a dictionary of the buildslaves for the given master.
+def get(main_name):
+  """Return a dictionary of the buildsubordinates for the given main.
 
-  Keys are slavenames and values are the unmodified slave dicts from the
-  slaves.cfg file for the given master.
+  Keys are subordinatenames and values are the unmodified subordinate dicts from the
+  subordinates.cfg file for the given main.
   """
   vars = {}
-  execfile(_slaves_cfg_path(master_name), vars)
-  slaves_cfg = {}
-  for slave_dict in vars['slaves']:
-    slaves_cfg[slave_dict['hostname']] = slave_dict
-  return slaves_cfg
+  execfile(_subordinates_cfg_path(main_name), vars)
+  subordinates_cfg = {}
+  for subordinate_dict in vars['subordinates']:
+    subordinates_cfg[subordinate_dict['hostname']] = subordinate_dict
+  return subordinates_cfg
 

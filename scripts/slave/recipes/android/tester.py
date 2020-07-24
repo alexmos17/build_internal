@@ -136,9 +136,9 @@ def GenSteps(api):
   # Required for us to be able to use filter.
   api.chromium_android.set_config('base_config')
 
-  mastername = api.properties['mastername']
+  mainname = api.properties['mainname']
   buildername = api.properties['buildername']
-  bot_config = BUILDERS[mastername][buildername]
+  bot_config = BUILDERS[mainname][buildername]
 
   api.chromium_android.configure_from_properties(
       bot_config['config'],
@@ -232,18 +232,18 @@ def _sanitize_nonalpha(text):
 
 
 def GenTests(api):
-  for mastername in BUILDERS:
-    for buildername in BUILDERS[mastername]:
-      bot_config = BUILDERS[mastername][buildername]
+  for mainname in BUILDERS:
+    for buildername in BUILDERS[mainname]:
+      bot_config = BUILDERS[mainname][buildername]
       test_props = (api.test(_sanitize_nonalpha('%s_%s' %
-                                                (mastername, buildername))) +
+                                                (mainname, buildername))) +
                     api.properties.generic(
                         revision='4f4b02f6b7fa20a3a25682c457bbc8ad589c8a00',
                         parent_buildername='parent_buildername',
                         parent_buildnumber='1729',
-                        mastername=mastername,
+                        mainname=mainname,
                         buildername=buildername,
-                        slavename='slavename',
+                        subordinatename='subordinatename',
                         buildnumber='1337'))
 
       if bot_config.get('try'):
@@ -261,9 +261,9 @@ def GenTests(api):
   yield (
       api.test('android_dbg_tests_recipe__content_browsertests_failure') +
       api.properties.generic(
-          mastername='tryserver.chromium.linux',
+          mainname='tryserver.chromium.linux',
           buildername='android_dbg_tests_recipe',
-          slavename='slavename') +
+          subordinatename='subordinatename') +
       api.override_step_data(
           'analyze',
           api.json.output({'status': 'Found dependency',
@@ -275,9 +275,9 @@ def GenTests(api):
   yield (
       api.test('no_provision_devices_when_no_tests') +
       api.properties.generic(
-          mastername='tryserver.chromium.linux',
+          mainname='tryserver.chromium.linux',
           buildername='android_dbg_tests_recipe',
-          slavename='slavename') +
+          subordinatename='subordinatename') +
       api.override_step_data(
           'analyze',
           api.json.output({'status': 'Found dependency',
@@ -289,9 +289,9 @@ def GenTests(api):
   yield (
       api.test('no_compile_because_of_analyze') +
       api.properties.generic(
-          mastername='tryserver.chromium.linux',
+          mainname='tryserver.chromium.linux',
           buildername='android_dbg_tests_recipe',
-          slavename='slavename') +
+          subordinatename='subordinatename') +
       api.override_step_data(
           'analyze',
           api.json.output({'status': 'No compile necessary'}))

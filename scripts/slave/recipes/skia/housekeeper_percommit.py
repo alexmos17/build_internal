@@ -59,11 +59,11 @@ def GenSteps(api):
 
 def GenTests(api):
   buildername = 'Housekeeper-PerCommit'
-  mastername = 'client.skia.fyi'
-  slavename = 'skiabot-linux-housekeeper-000'
+  mainname = 'client.skia.fyi'
+  subordinatename = 'skiabot-linux-housekeeper-000'
   yield (
     api.test(buildername) +
     api.properties(buildername=buildername,
-                   mastername=mastername,
-                   slavename=slavename)
+                   mainname=mainname,
+                   subordinatename=subordinatename)
   )

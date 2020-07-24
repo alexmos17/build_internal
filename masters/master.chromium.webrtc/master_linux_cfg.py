@@ -5,14 +5,14 @@
 from buildbot.scheduler import Triggerable
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-from master.factory import annotator_factory
+from main.factory import annotator_factory
 
 m_annotator = annotator_factory.AnnotatorFactory()
 
 def Update(c):
   c['schedulers'].extend([
       SingleBranchScheduler(name='linux_rel_scheduler',
-                            branch='master',
+                            branch='main',
                             treeStableTimer=60,
                             builderNames=['Linux Builder']),
       Triggerable(name='linux_rel_trigger',

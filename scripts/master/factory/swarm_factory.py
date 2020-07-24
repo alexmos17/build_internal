@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Utility class to build the Swarm master BuildFactory's.
+"""Utility class to build the Swarm main BuildFactory's.
 
 Based on chromium_factory.py and adds chromium-on-swarm-specific steps.
 
@@ -17,9 +17,9 @@ Common usage:
   - SwarmFactory()
 """
 
-from master.factory import build_factory
-from master.factory import chromium_factory
-from master.factory import swarm_commands
+from main.factory import build_factory
+from main.factory import chromium_factory
+from main.factory import swarm_commands
 
 
 def SwarmTestBuilder(swarm_server, isolation_server, tests):
@@ -53,7 +53,7 @@ class SwarmFactory(chromium_factory.ChromiumFactory):
   can trigger swarming jobs but doesn't look for results.
 
   This factory does both, which is usually a waste of resource, you don't want
-  to waste a powerful slave sitting idle, waiting for swarm results. Used on
+  to waste a powerful subordinate sitting idle, waiting for swarm results. Used on
   chromium.swarm canary for simplicity purpose.
   """
   def SwarmFactory(

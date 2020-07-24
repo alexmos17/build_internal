@@ -880,7 +880,7 @@ def RunCommand(command, parser_func=None, filter_obj=None, pipes=None,
       if kill_event.wait(timeout):
         break
 
-  # TODO(all): nsylvain's CommandRunner in buildbot_slave is based on this
+  # TODO(all): nsylvain's CommandRunner in buildbot_subordinate is based on this
   # method.  Update it when changes are introduced here.
   def ProcessRead(readfh, writefh, parser_func=None, filter_obj=None,
                   log_event=None):
@@ -888,7 +888,7 @@ def RunCommand(command, parser_func=None, filter_obj=None, pipes=None,
 
     # Python on Windows writes the buffer only when it reaches 4k.  Ideally
     # we would flush a minimum of 10 seconds.  However, we only write and
-    # flush no more often than 20 seconds to avoid flooding the master with
+    # flush no more often than 20 seconds to avoid flooding the main with
     # network traffic from unbuffered output.
     kill_event = threading.Event()
     flush_thread = threading.Thread(
@@ -1198,12 +1198,12 @@ def SshCopyTree(srctree, host, dst):
                         (srctree, host + ':' + dst, result))
 
 
-def ListMasters(cue='master.cfg', include_public=True, include_internal=True):
-  """Returns all the masters found."""
-  # Look for "internal" masters first.
+def ListMains(cue='main.cfg', include_public=True, include_internal=True):
+  """Returns all the mains found."""
+  # Look for "internal" mains first.
   path_internal = os.path.join(
-      BUILD_DIR, os.pardir, 'build_internal', 'masters/*/' + cue)
-  path = os.path.join(BUILD_DIR, 'masters/*/' + cue)
+      BUILD_DIR, os.pardir, 'build_internal', 'mains/*/' + cue)
+  path = os.path.join(BUILD_DIR, 'mains/*/' + cue)
   filenames = []
   if include_public:
     filenames += glob.glob(path)
@@ -1212,29 +1212,29 @@ def ListMasters(cue='master.cfg', include_public=True, include_internal=True):
   return [os.path.abspath(os.path.dirname(f)) for f in filenames]
 
 
-def GetAllSlaves(fail_hard=False):
-  """Return all slave objects from masters."""
-  slaves = []
-  for master in ListMasters(cue='slaves.cfg'):
-    cur_slaves = RunSlavesCfg(os.path.join(master, 'slaves.cfg'),
+def GetAllSubordinates(fail_hard=False):
+  """Return all subordinate objects from mains."""
+  subordinates = []
+  for main in ListMains(cue='subordinates.cfg'):
+    cur_subordinates = RunSubordinatesCfg(os.path.join(main, 'subordinates.cfg'),
                               fail_hard=fail_hard)
-    for slave in cur_slaves:
-      slave['mastername'] = os.path.basename(master)
-    slaves.extend(cur_slaves)
-  return slaves
+    for subordinate in cur_subordinates:
+      subordinate['mainname'] = os.path.basename(main)
+    subordinates.extend(cur_subordinates)
+  return subordinates
 
 
-def GetSlavesForHost():
-  """Get slaves for a host, defaulting to current host."""
+def GetSubordinatesForHost():
+  """Get subordinates for a host, defaulting to current host."""
   hostname = os.getenv('TESTING_SLAVENAME')
   if not hostname:
     hostname = socket.getfqdn().split('.', 1)[0].lower()
-  slaves = []
-  for master in ListMasters(cue='slaves.cfg'):
-    slaves.extend(
-        s for s in RunSlavesCfg(os.path.join(master, 'slaves.cfg'))
+  subordinates = []
+  for main in ListMains(cue='subordinates.cfg'):
+    subordinates.extend(
+        s for s in RunSubordinatesCfg(os.path.join(main, 'subordinates.cfg'))
         if s.get('hostname') == hostname)
-  return slaves
+  return subordinates
 
 
 def GetActiveSubdir():
@@ -1244,35 +1244,35 @@ def GetActiveSubdir():
     return subdir
 
 
-def GetActiveSlavename():
-  slavename = os.getenv('TESTING_SLAVENAME')
-  if not slavename:
-    slavename = socket.getfqdn().split('.', 1)[0].lower()
+def GetActiveSubordinatename():
+  subordinatename = os.getenv('TESTING_SLAVENAME')
+  if not subordinatename:
+    subordinatename = socket.getfqdn().split('.', 1)[0].lower()
   subdir = GetActiveSubdir()
   if subdir:
-    return '%s#%s' % (slavename, subdir)
-  return slavename
+    return '%s#%s' % (subordinatename, subdir)
+  return subordinatename
 
 
-def EntryToSlaveName(entry):
-  """Produces slave name from the slaves config dict."""
-  name = entry.get('slavename') or entry.get('hostname')
+def EntryToSubordinateName(entry):
+  """Produces subordinate name from the subordinates config dict."""
+  name = entry.get('subordinatename') or entry.get('hostname')
   if 'subdir' in entry:
     return '%s#%s' % (name, entry['subdir'])
   return name
 
 
-def GetActiveMaster(slavename=None, default=None):
-  """Parses all the slaves.cfg and returns the name of the active master
+def GetActiveMain(subordinatename=None, default=None):
+  """Parses all the subordinates.cfg and returns the name of the active main
   determined by the hostname. Returns None otherwise.
 
-  It will be matched against *both* the 'slavename' and 'hostname' fields
-  in slaves.cfg.
+  It will be matched against *both* the 'subordinatename' and 'hostname' fields
+  in subordinates.cfg.
   """
-  slavename = slavename or GetActiveSlavename()
-  for slave in GetAllSlaves():
-    if slavename == EntryToSlaveName(slave):
-      return slave['master']
+  subordinatename = subordinatename or GetActiveSubordinatename()
+  for subordinate in GetAllSubordinates():
+    if subordinatename == EntryToSubordinateName(subordinate):
+      return subordinate['main']
   return default
 
 
@@ -1303,10 +1303,10 @@ def ParsePythonCfg(cfg_filepath, fail_hard=False):
     sys.path = old_sys_path
 
 
-def RunSlavesCfg(slaves_cfg, fail_hard=False):
-  """Runs slaves.cfg in a consistent way."""
-  slave_config = ParsePythonCfg(slaves_cfg, fail_hard=fail_hard) or {}
-  return slave_config.get('slaves', [])
+def RunSubordinatesCfg(subordinates_cfg, fail_hard=False):
+  """Runs subordinates.cfg in a consistent way."""
+  subordinate_config = ParsePythonCfg(subordinates_cfg, fail_hard=fail_hard) or {}
+  return subordinate_config.get('subordinates', [])
 
 
 def convert_json(option, _, value, parser):
@@ -1461,8 +1461,8 @@ def GetSortableUploadPathForSortKey(branch, value, delimiter=None):
 
   Returns a canonical sort key path for a sort key. The result will be one of
   the following forms:
-  - (Without Branch or With Branch=='refs/heads/master'): <value> (e.g., 12345)
-  - (With non-Master Branch): <branch-path>-<value> (e.g.,
+  - (Without Branch or With Branch=='refs/heads/main'): <value> (e.g., 12345)
+  - (With non-Main Branch): <branch-path>-<value> (e.g.,
         "refs_my-branch-12345")
 
   When a 'branch' is supplied, it is converted to a path-suitable form. This
@@ -1482,7 +1482,7 @@ def GetSortableUploadPathForSortKey(branch, value, delimiter=None):
         <value> when constructing the branch-inclusive form. If omitted
         (default), a hyphen ('-') will be used.
   """
-  if branch and branch != 'refs/heads/master':
+  if branch and branch != 'refs/heads/main':
     delimiter = delimiter or '-'
     branch = branch.replace('/', '_')
     return '%s%s%s' % (branch, delimiter, value)
@@ -1506,8 +1506,8 @@ def ParseCommitPosition(value):
 def BuildCommitPosition(branch, value):
   """Returns: A constructed commit position.
 
-  An example commit position for branch 'refs/heads/master' value '12345' is:
-  refs/heads/master@{#12345}
+  An example commit position for branch 'refs/heads/main' value '12345' is:
+  refs/heads/main@{#12345}
 
   This value can be parsed via 'ParseCommitPosition'.
 
@@ -1690,8 +1690,8 @@ def ReadJsonAsUtf8(filename=None, text=None):
     return json.loads(text, object_hook=_decode_dict)
 
 
-def GetMasterDevParameters(filename='master_cfg_params.json'):
-  """Look for master development parameter files in the master directory.
+def GetMainDevParameters(filename='main_cfg_params.json'):
+  """Look for main development parameter files in the main directory.
 
   Return the parsed content if the file exists, as a dictionary.
   Every string value in the dictionary is utf8-encoded str.
@@ -1744,15 +1744,15 @@ def FileExclusions():
   return all_platforms
 
 
-def DatabaseSetup(buildmaster_config, require_dbconfig=False):
-  """Read database credentials in the master directory."""
+def DatabaseSetup(buildmain_config, require_dbconfig=False):
+  """Read database credentials in the main directory."""
   if os.path.isfile('.dbconfig'):
     values = {}
     execfile('.dbconfig', values)
     if 'password' not in values:
       raise Exception('could not get db password')
 
-    buildmaster_config['db_url'] = 'postgresql://%s:%s@%s/%s' % (
+    buildmain_config['db_url'] = 'postgresql://%s:%s@%s/%s' % (
         values['username'], values['password'],
         values.get('hostname', 'localhost'), values['dbname'])
   else:

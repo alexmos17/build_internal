@@ -25,9 +25,9 @@ from twisted.python import log
 from twisted.web import client
 
 from common import git_helper
-from master import build_utils
-from master import chromium_notifier
-from master import get_password
+from main import build_utils
+from main import chromium_notifier
+from main import get_password
 
 
 class GateKeeper(chromium_notifier.ChromiumNotifier):
@@ -137,17 +137,17 @@ class GateKeeper(chromium_notifier.ChromiumNotifier):
       except(KeyError):
         pass  # Continue on if the 'branch' property is not defined.
 
-    # Check if the slave is still alive. We should not close the tree for
-    # inactive slaves.
-    slave_name = build_status.getSlavename()
-    if slave_name in self.master_status.getSlaveNames():
-      # @type self.master_status: L{buildbot.status.builder.Status}
-      # @type self.parent: L{buildbot.master.BuildMaster}
-      # @rtype getSlave(): L{buildbot.status.builder.SlaveStatus}
-      slave_status = self.master_status.getSlave(slave_name)
-      if slave_status and not slave_status.isConnected():
-        GateKeeper.msg('Slave %s was disconnected, '
-                'not closing the tree' % slave_name)
+    # Check if the subordinate is still alive. We should not close the tree for
+    # inactive subordinates.
+    subordinate_name = build_status.getSubordinatename()
+    if subordinate_name in self.main_status.getSubordinateNames():
+      # @type self.main_status: L{buildbot.status.builder.Status}
+      # @type self.parent: L{buildbot.main.BuildMain}
+      # @rtype getSubordinate(): L{buildbot.status.builder.SubordinateStatus}
+      subordinate_status = self.main_status.getSubordinate(subordinate_name)
+      if subordinate_status and not subordinate_status.isConnected():
+        GateKeeper.msg('Subordinate %s was disconnected, '
+                'not closing the tree' % subordinate_name)
         return False
 
     # If the previous build step failed with the same result, we don't care
@@ -161,9 +161,9 @@ class GateKeeper(chromium_notifier.ChromiumNotifier):
       if len(previous_steps) == 1:
         if previous_steps[0].getResults()[0] == FAILURE:
           # The previous same step failed on the previous build. Ignore.
-          GateKeeper.msg('Slave %s failed, but previously failed on '
+          GateKeeper.msg('Subordinate %s failed, but previously failed on '
                   'the same step (%s). So not closing tree.' % (
-                      (step_name, slave_name)))
+                      (step_name, subordinate_name)))
           return False
       else:
         GateKeeper.msg('len(previous_steps) == %d which is weird' %
@@ -187,8 +187,8 @@ class GateKeeper(chromium_notifier.ChromiumNotifier):
     # likely a build started manually, and we don't want to close the
     # tree.
     if not latest_revision or not build_status.getResponsibleUsers():
-      GateKeeper.msg('Slave %s failed, but no version stamp or responsible '
-                     'users, so skipping.' % slave_name)
+      GateKeeper.msg('Subordinate %s failed, but no version stamp or responsible '
+                     'users, so skipping.' % subordinate_name)
       return False
 
     # self._last_closure_revision can be a number (svn revision)
@@ -208,14 +208,14 @@ class GateKeeper(chromium_notifier.ChromiumNotifier):
         this_rev = latest_revision
         last_rev = self._last_closure_revision
       if this_rev <= last_rev:
-        GateKeeper.msg('Slave %s failed, but we already closed it '
+        GateKeeper.msg('Subordinate %s failed, but we already closed it '
                 'for a previous revision (old=%s, new=%s)' % (
-                    slave_name, str(self._last_closure_revision),
+                    subordinate_name, str(self._last_closure_revision),
                     str(latest_revision)))
         return False
 
-    GateKeeper.msg('Decided to close tree because of slave %s '
-            'on revision %s' % (slave_name, str(latest_revision)))
+    GateKeeper.msg('Decided to close tree because of subordinate %s '
+            'on revision %s' % (subordinate_name, str(latest_revision)))
 
     # Up to here, in theory we'd check if the tree is closed but this is too
     # slow to check here. Instead, take a look only when we want to close the

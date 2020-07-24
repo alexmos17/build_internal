@@ -4,7 +4,7 @@
 
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-from master.factory import annotator_factory
+from main.factory import annotator_factory
 
 m_annotator = annotator_factory.AnnotatorFactory()
 
@@ -25,13 +25,13 @@ def Update(c):
   ])
 
   specs = [
-    {'name': 'Linux32 Debug', 'slavebuilddir': 'linux32'},
-    {'name': 'Linux32 Release', 'slavebuilddir': 'linux32'},
-    {'name': 'Linux64 Debug', 'slavebuilddir': 'linux64'},
-    {'name': 'Linux64 Release', 'slavebuilddir': 'linux64'},
-    {'name': 'Linux Asan', 'slavebuilddir': 'linux_asan'},
-    {'name': 'Linux Memcheck', 'slavebuilddir': 'linux_memcheck_tsan'},
-    {'name': 'Linux Tsan v2', 'slavebuilddir': 'linux_tsan2'},
+    {'name': 'Linux32 Debug', 'subordinatebuilddir': 'linux32'},
+    {'name': 'Linux32 Release', 'subordinatebuilddir': 'linux32'},
+    {'name': 'Linux64 Debug', 'subordinatebuilddir': 'linux64'},
+    {'name': 'Linux64 Release', 'subordinatebuilddir': 'linux64'},
+    {'name': 'Linux Asan', 'subordinatebuilddir': 'linux_asan'},
+    {'name': 'Linux Memcheck', 'subordinatebuilddir': 'linux_memcheck_tsan'},
+    {'name': 'Linux Tsan v2', 'subordinatebuilddir': 'linux_tsan2'},
   ]
 
   c['builders'].extend([
@@ -40,6 +40,6 @@ def Update(c):
         'factory': m_annotator.BaseFactory('libyuv/libyuv'),
         'notify_on_missing': True,
         'category': 'linux',
-        'slavebuilddir': spec['slavebuilddir'],
+        'subordinatebuilddir': spec['subordinatebuilddir'],
       } for spec in specs
   ])

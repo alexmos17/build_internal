@@ -31,8 +31,8 @@ def GenSteps(api):
     try:
       api.gclient.checkout(revert=True)
     except api.step.StepFailure:
-      api.path.rmcontents('slave build directory',
-                                api.path['slave_build'])
+      api.path.rmcontents('subordinate build directory',
+                                api.path['subordinate_build'])
       api.gclient.checkout(revert=False)
     api.tryserver.maybe_apply_issue()
 
@@ -41,7 +41,7 @@ def GenSteps(api):
   try:
     step_result = api.chromium.compile()
   except api.step.StepFailure:
-    api.path.rmcontents('slave build directory', api.path['slave_build'])
+    api.path.rmcontents('subordinate build directory', api.path['subordinate_build'])
     if bot_update_mode:
       api.bot_update.ensure_checkout(suffix='clean')
     else:
@@ -73,6 +73,6 @@ def GenTests(api):
   yield (
       api.test('bot_update_on') +
       api.properties.tryserver(buildername='fake_trybot_buildername',
-                               mastername='bot_update.always_on') +
+                               mainname='bot_update.always_on') +
       api.step_data('compile', retcode=1)
   )

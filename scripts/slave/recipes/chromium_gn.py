@@ -163,12 +163,12 @@ BUILDERS = {
 
 def GenSteps(api):
   # TODO: crbug.com/358481 . The build_config should probably be a property
-  # passed in from slaves.cfg, but that doesn't exist today, so we need a
+  # passed in from subordinates.cfg, but that doesn't exist today, so we need a
   # lookup mechanism to map bot name to build_config.
-  mastername = api.properties.get('mastername')
+  mainname = api.properties.get('mainname')
   buildername = api.properties.get('buildername')
-  master_dict = BUILDERS.get(mastername, {})
-  bot_config = master_dict.get('builders', {}).get(buildername)
+  main_dict = BUILDERS.get(mainname, {})
+  bot_config = main_dict.get('builders', {}).get(buildername)
 
   api.chromium.set_config('chromium',
                           **bot_config.get('chromium_config_kwargs', {}))
@@ -225,19 +225,19 @@ def GenTests(api):
   # TODO: crbug.com/354674. Figure out where to put "simulation"
   # tests. We should have one test for each bot this recipe runs on.
 
-  for mastername in BUILDERS:
-    for buildername in BUILDERS[mastername]['builders']:
+  for mainname in BUILDERS:
+    for buildername in BUILDERS[mainname]['builders']:
       test = (
-          api.test('full_%s_%s' % (_sanitize_nonalpha(mastername),
+          api.test('full_%s_%s' % (_sanitize_nonalpha(mainname),
                                    _sanitize_nonalpha(buildername))) +
           api.platform.name('linux')
       )
-      if mastername.startswith('tryserver'):
+      if mainname.startswith('tryserver'):
         test += api.properties.tryserver(buildername=buildername,
-                                         mastername=mastername)
+                                         mainname=mainname)
       else:
         test += api.properties.generic(buildername=buildername,
-                                       mastername=mastername)
+                                       mainname=mainname)
       yield test
 
   yield (
@@ -245,6 +245,6 @@ def GenTests(api):
     api.platform.name('linux') +
     api.properties.tryserver(
         buildername='linux_chromium_gn_rel',
-        mastername='tryserver.chromium.linux') +
+        mainname='tryserver.chromium.linux') +
     api.step_data('compile', retcode=1)
   )

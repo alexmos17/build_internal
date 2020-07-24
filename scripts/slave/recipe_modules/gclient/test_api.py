@@ -4,7 +4,7 @@
 
 import hashlib
 
-from slave import recipe_test_api
+from subordinate import recipe_test_api
 
 class GclientTestApi(recipe_test_api.RecipeTestApi):
   def output_json(self, projects, git_mode=False):

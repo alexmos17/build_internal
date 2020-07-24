@@ -1,4 +1,4 @@
-from slave import recipe_test_api
+from subordinate import recipe_test_api
 
 class PropertiesTestApi(recipe_test_api.RecipeTestApi):
   def __call__(self, **kwargs):
@@ -15,9 +15,9 @@ class PropertiesTestApi(recipe_test_api.RecipeTestApi):
         blamelist_real=['cool_dev1337@chromium.org', 'hax@chromium.org'],
         buildername='TestBuilder',
         buildnumber=571,
-        mastername='chromium.testing.master',
-        slavename='TestSlavename',
-        workdir='/path/to/workdir/TestSlavename',
+        mainname='chromium.testing.main',
+        subordinatename='TestSubordinatename',
+        workdir='/path/to/workdir/TestSubordinatename',
     )
     ret.properties.update(kwargs)
     return ret
@@ -42,7 +42,7 @@ class PropertiesTestApi(recipe_test_api.RecipeTestApi):
     by a gitpoller/scheduler, and return the blob.
     """
     ret = self.generic(
-        branch='master',
+        branch='main',
         project='',
         repository='https://chromium.googlesource.com/chromium/src.git',
         revision='c14d891d44f0afff64e56ed7c9702df1d807b1ee',

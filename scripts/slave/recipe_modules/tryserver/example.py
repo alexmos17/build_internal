@@ -10,7 +10,7 @@ DEPS = [
 
 
 def GenSteps(api):
-  api.path['checkout'] = api.path['slave_build']
+  api.path['checkout'] = api.path['subordinate_build']
   api.tryserver.maybe_apply_issue()
 
 

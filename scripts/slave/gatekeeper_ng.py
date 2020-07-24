@@ -3,10 +3,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Closes tree if configured masters have failed tree-closing steps.
+"""Closes tree if configured mains have failed tree-closing steps.
 
-Given a list of masters, gatekeeper_ng will get a list of the latest builds from
-the specified masters. It then checks if any tree-closing steps have failed, and
+Given a list of mains, gatekeeper_ng will get a list of the latest builds from
+the specified mains. It then checks if any tree-closing steps have failed, and
 if so closes the tree and emails appropriate parties. Configuration for which
 steps to close and which parties to notify are in a local gatekeeper.json file.
 """
@@ -29,9 +29,9 @@ import time
 import urllib
 import urllib2
 
-from slave import build_scan
-from slave import build_scan_db
-from slave import gatekeeper_ng_config
+from subordinate import build_scan
+from subordinate import build_scan_db
+from subordinate import gatekeeper_ng_config
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -88,18 +88,18 @@ def get_builder_section(gatekeeper_section, builder):
   return None
 
 
-def check_builds(master_builds, master_jsons, gatekeeper_config):
+def check_builds(main_builds, main_jsons, gatekeeper_config):
   """Given a gatekeeper configuration, see which builds have failed."""
   succeeded_builds = []
   failed_builds = []
 
   # Sort by buildnumber, highest first.
-  sorted_builds = sorted(master_builds, key=lambda x: x[3], reverse=True)
+  sorted_builds = sorted(main_builds, key=lambda x: x[3], reverse=True)
   successful_builder_steps = defaultdict(lambda: defaultdict(set))
   current_builds_successful = True
 
-  for build_json, master_url, builder, buildnum in sorted_builds:
-    gatekeeper_sections = gatekeeper_config.get(master_url, [])
+  for build_json, main_url, builder, buildnum in sorted_builds:
+    gatekeeper_sections = gatekeeper_config.get(main_url, [])
     for gatekeeper_section in gatekeeper_sections:
       section_hash = gatekeeper_ng_config.gatekeeper_section_hash(
           gatekeeper_section)
@@ -107,7 +107,7 @@ def check_builds(master_builds, master_jsons, gatekeeper_config):
       gatekeeper = get_builder_section(
           gatekeeper_section, build_json['builderName'])
       if not gatekeeper:
-        succeeded_builds.append((master_url, builder, buildnum))
+        succeeded_builds.append((main_url, builder, buildnum))
         continue
 
       steps = build_json['steps']
@@ -137,7 +137,7 @@ def check_builds(master_builds, master_jsons, gatekeeper_config):
       successful_steps = set(s['name'] for s in finished
                              if s.get('results', [FAILURE])[0] != FAILURE)
 
-      successful_builder_steps[master_url][builder].update(successful_steps)
+      successful_builder_steps[main_url][builder].update(successful_steps)
 
       finished_steps = set(s['name'] for s in finished)
 
@@ -160,8 +160,8 @@ def check_builds(master_builds, master_jsons, gatekeeper_config):
           build_json['results'] == FAILURE and respect_build_status):
         unsatisfied_steps.add('[overall build status]')
 
-      buildbot_url = master_jsons[master_url]['project']['buildbotURL']
-      project_name = master_jsons[master_url]['project']['title']
+      buildbot_url = main_jsons[main_url]['project']['buildbotURL']
+      project_name = main_jsons[main_url]['project']['title']
 
       if unsatisfied_steps:
         failed_builds.append(({'base_url': buildbot_url,
@@ -176,21 +176,21 @@ def check_builds(master_builds, master_jsons, gatekeeper_config):
                                'tree_notify': tree_notify,
                                'unsatisfied': unsatisfied_steps,
                               },
-                              master_url,
+                              main_url,
                               builder,
                               buildnum,
                               section_hash))
         # If there is a failing step that a newer builder hasn't succeeded on,
         # don't open the tree.
         still_failing_steps = (
-            unsatisfied_steps - successful_builder_steps[master_url][builder])
+            unsatisfied_steps - successful_builder_steps[main_url][builder])
         if still_failing_steps and close_tree:
           logging.debug('%s failed on %s, not yet resolved.',
               ','.join(still_failing_steps),
               generate_build_url(failed_builds[-1][0]))
           current_builds_successful = False
       else:
-        succeeded_builds.append((master_url, builder, buildnum))
+        succeeded_builds.append((main_url, builder, buildnum))
 
   return (list(reversed(failed_builds)), list(reversed(succeeded_builds)),
       successful_builder_steps, current_builds_successful)
@@ -198,14 +198,14 @@ def check_builds(master_builds, master_jsons, gatekeeper_config):
 
 def propagate_build_status_back_to_db(failure_tuples, success_tuples, build_db):
   """Write back to build_db which finished steps failed or succeeded."""
-  for _, master_url, builder, buildnum, _ in failure_tuples:
-    builder_dict = build_db.masters[master_url][builder]
+  for _, main_url, builder, buildnum, _ in failure_tuples:
+    builder_dict = build_db.mains[main_url][builder]
     if builder_dict[buildnum].finished:
       # pylint: disable=W0212
       builder_dict[buildnum] = builder_dict[buildnum]._replace(
           succeeded=False)
-  for master_url, builder, buildnum in success_tuples:
-    builder_dict = build_db.masters[master_url][builder]
+  for main_url, builder, buildnum in success_tuples:
+    builder_dict = build_db.mains[main_url][builder]
     if builder_dict[buildnum].finished:
       # pylint: disable=W0212
       builder_dict[buildnum] = builder_dict[buildnum]._replace(
@@ -343,10 +343,10 @@ def debounce_failures(failed_builds, current_builds_successful, build_db):
   """Using trigger information in build_db, make sure we don't double-fire."""
 
   @contextmanager
-  def save_build_failures(master_url, builder, buildnum, section_hash,
+  def save_build_failures(main_url, builder, buildnum, section_hash,
                           unsatisfied):
     yield
-    build_db.masters[master_url][builder][buildnum].triggered[
+    build_db.mains[main_url][builder][buildnum].triggered[
         section_hash] = unsatisfied
 
   if failed_builds and current_builds_successful:
@@ -354,11 +354,11 @@ def debounce_failures(failed_builds, current_builds_successful, build_db):
         'All failing steps succeeded in later runs, not closing tree.')
     return []
   true_failed_builds = []
-  for build, master_url, builder, buildnum, section_hash in failed_builds:
+  for build, main_url, builder, buildnum, section_hash in failed_builds:
     with log_section(build['base_url'], builder, buildnum, section_hash):
-      with save_build_failures(master_url, builder, buildnum, section_hash,
+      with save_build_failures(main_url, builder, buildnum, section_hash,
                                build['unsatisfied']):
-        build_db_builder = build_db.masters[master_url][builder]
+        build_db_builder = build_db.mains[main_url][builder]
 
         # Determine what the current and previous failing steps are.
         prev_triggered = []
@@ -453,7 +453,7 @@ def submit_email(email_app, build_data, secret):
           code, response))
 
 
-def open_tree_if_possible(build_db, master_jsons, successful_builder_steps,
+def open_tree_if_possible(build_db, main_jsons, successful_builder_steps,
     current_builds_successful, username, password, status_url_root,
     set_status, emoji):
   if not current_builds_successful:
@@ -461,9 +461,9 @@ def open_tree_if_possible(build_db, master_jsons, successful_builder_steps,
     return
 
   previously_failed_builds = []
-  for master_url, master in master_jsons.iteritems():
-    for builder in master['builders']:
-      builder_dict = build_db.masters.get(master_url, {}).get(builder, {})
+  for main_url, main in main_jsons.iteritems():
+    for builder in main['builders']:
+      builder_dict = build_db.mains.get(main_url, {}).get(builder, {})
       for buildnum, build in builder_dict.iteritems():
         if build.finished:
           if not build.succeeded:
@@ -473,11 +473,11 @@ def open_tree_if_possible(build_db, master_jsons, successful_builder_steps,
             else:
               failing_steps = set()
             still_failing_steps = (
-                failing_steps - successful_builder_steps[master_url][builder])
+                failing_steps - successful_builder_steps[main_url][builder])
             if still_failing_steps:
               previously_failed_builds.append(
                   '%s on %s %s/builders/%s/builds/%d' % (
-                  ','.join(still_failing_steps), builder, master_url,
+                  ','.join(still_failing_steps), builder, main_url,
                   urllib.quote(builder), buildnum))
 
   if previously_failed_builds:
@@ -655,7 +655,7 @@ def notify_failures(failed_builds, sheriff_url, default_from_email,
 
 def get_options():
   prog_desc = 'Closes the tree if annotated builds fail.'
-  usage = '%prog [options] <one or more master urls>'
+  usage = '%prog [options] <one or more main urls>'
   parser = optparse.OptionParser(usage=(usage + '\n\n' + prog_desc))
   parser.add_option('--build-db', default='build_db.json',
                     help='records the last-seen build for each builder')
@@ -733,7 +733,7 @@ def get_options():
     return options, args
 
   if not args:
-    parser.error('you need to specify at least one master URL')
+    parser.error('you need to specify at least one main URL')
 
   if options.no_email_app:
     options.email_app_url = None
@@ -773,10 +773,10 @@ def main():
   if options.set_status:
     options.password = get_pwd(options.password_file)
 
-  masters = set(args)
-  if not masters <= set(gatekeeper_config):
-    print 'The following masters are not present in the gatekeeper config:'
-    for m in masters - set(gatekeeper_config):
+  mains = set(args)
+  if not mains <= set(gatekeeper_config):
+    print 'The following mains are not present in the gatekeeper config:'
+    for m in mains - set(gatekeeper_config):
       print '  ' + m
     return 1
 
@@ -795,8 +795,8 @@ def main():
   else:
     build_db = build_scan_db.get_build_db(options.build_db)
 
-  master_jsons, build_jsons = build_scan.get_updated_builds(
-      masters, build_db, options.parallelism)
+  main_jsons, build_jsons = build_scan.get_updated_builds(
+      mains, build_db, options.parallelism)
 
   if options.sync_build_db:
     build_scan_db.save_build_db(build_db, gatekeeper_config,
@@ -805,7 +805,7 @@ def main():
 
   (failure_tuples, success_tuples, successful_builder_steps,
       current_builds_successful) = check_builds(
-        build_jsons, master_jsons, gatekeeper_config)
+        build_jsons, main_jsons, gatekeeper_config)
 
   # Write failure / success information back to the build_db.
   propagate_build_status_back_to_db(failure_tuples, success_tuples, build_db)
@@ -813,7 +813,7 @@ def main():
   # opening is an option, mostly to keep the unittests working which
   # assume that any setting of status is negative.
   if options.open_tree:
-    open_tree_if_possible(build_db, master_jsons, successful_builder_steps,
+    open_tree_if_possible(build_db, main_jsons, successful_builder_steps,
         current_builds_successful, options.status_user, options.password,
         options.status_url, options.set_status, emoji)
 

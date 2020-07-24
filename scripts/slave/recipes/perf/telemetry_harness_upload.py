@@ -47,6 +47,6 @@ def GenTests(api):
   yield (
       api.test('basic') +
       api.properties.generic(
-          mastername='chromium.lkgr',
+          mainname='chromium.lkgr',
           buildername='Telemetry Harness Upload')
   )

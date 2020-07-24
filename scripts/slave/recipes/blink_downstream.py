@@ -70,10 +70,10 @@ BUILDERS = {
 
 
 def GenSteps(api):
-  mastername = api.properties.get('mastername')
+  mainname = api.properties.get('mainname')
   buildername = api.properties.get('buildername')
-  master_dict = BUILDERS.get(mastername, {})
-  bot_config = master_dict.get('builders', {}).get(buildername)
+  main_dict = BUILDERS.get(mainname, {})
+  bot_config = main_dict.get('builders', {}).get(buildername)
 
   # Sync chromium and blink to HEAD.
   api.chromium.set_config('blink',
@@ -132,21 +132,21 @@ def GenTests(api):
   with_patch = 'webkit_tests (with patch)'
   without_patch = 'webkit_tests (without patch)'
 
-  def properties(mastername, buildername):
+  def properties(mainname, buildername):
     return (
-      api.properties.generic(mastername=mastername,
+      api.properties.generic(mainname=mainname,
                              buildername=buildername,
                              revision='20123')
     )
 
-  for mastername, master_config in BUILDERS.iteritems():
-    for buildername, bot_config in master_config['builders'].iteritems():
-      test_name = 'full_%s_%s' % (_sanitize_nonalpha(mastername),
+  for mainname, main_config in BUILDERS.iteritems():
+    for buildername, bot_config in main_config['builders'].iteritems():
+      test_name = 'full_%s_%s' % (_sanitize_nonalpha(mainname),
                                   _sanitize_nonalpha(buildername))
       tests = []
       for (pass_first, suffix) in ((True, '_pass'), (False, '_fail')):
         test = (
-          properties(mastername, buildername) +
+          properties(mainname, buildername) +
           api.platform(
               bot_config['testing']['platform'],
               bot_config.get(

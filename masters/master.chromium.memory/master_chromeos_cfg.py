@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import master_config
-from master.factory import chromium_factory
+from main import main_config
+from main.factory import chromium_factory
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 F = helper.Factory
 S = helper.Scheduler
@@ -21,14 +21,14 @@ defaults['category'] = '3chromeos asan'
 #
 # Main asan release scheduler for src/
 #
-S('chromeos_asan_rel', branch='master', treeStableTimer=60)
+S('chromeos_asan_rel', branch='main', treeStableTimer=60)
 
 #
 # Triggerable scheduler for the rel asan builder
 #
 T('chromeos_asan_rel_trigger')
 
-chromeos_asan_archive = master_config.GetArchiveUrl(
+chromeos_asan_archive = main_config.GetArchiveUrl(
     'ChromiumMemory',
     'Linux Chromium OS ASan LSan Builder',
     'Linux_Chromium_OS_ASan_LSan_Builder',
@@ -115,7 +115,7 @@ fp_chromeos_asan = {
 B('Linux Chromium OS ASan LSan Builder', 'chromeos_asan_rel', 'compile',
   'chromeos_asan_rel', auto_reboot=False, notify_on_missing=True)
 F('chromeos_asan_rel', linux().ChromiumASANFactory(
-    slave_type='Builder',
+    subordinate_type='Builder',
     build_url=chromeos_asan_archive,
     options=[
       '--build-tool=ninja',
@@ -176,7 +176,7 @@ asan_tests_3 = [
 B('Linux Chromium OS ASan LSan Tests (1)', 'chromeos_asan_rel_tests_1',
   'testers', 'chromeos_asan_rel_trigger', notify_on_missing=True)
 F('chromeos_asan_rel_tests_1', linux().ChromiumASANFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=chromeos_asan_archive,
     tests=asan_tests_1,
     factory_properties=dict(fp_chromeos_asan,
@@ -186,7 +186,7 @@ F('chromeos_asan_rel_tests_1', linux().ChromiumASANFactory(
 B('Linux Chromium OS ASan LSan Tests (2)', 'chromeos_asan_rel_tests_2',
   'testers', 'chromeos_asan_rel_trigger', notify_on_missing=True)
 F('chromeos_asan_rel_tests_2', linux().ChromiumASANFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=chromeos_asan_archive,
     tests=asan_tests_2,
     factory_properties=dict(fp_chromeos_asan,
@@ -196,7 +196,7 @@ F('chromeos_asan_rel_tests_2', linux().ChromiumASANFactory(
 B('Linux Chromium OS ASan LSan Tests (3)', 'chromeos_asan_rel_tests_3',
   'testers', 'chromeos_asan_rel_trigger', notify_on_missing=True)
 F('chromeos_asan_rel_tests_3', linux().ChromiumASANFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=chromeos_asan_archive,
     tests=asan_tests_3,
     factory_properties=dict(fp_chromeos_asan,
@@ -204,5 +204,5 @@ F('chromeos_asan_rel_tests_3', linux().ChromiumASANFactory(
                             browser_shard_index='3')))
 
 
-def Update(config, active_master, c):
+def Update(config, active_main, c):
   return helper.Update(c)

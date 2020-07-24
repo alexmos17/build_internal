@@ -4,8 +4,8 @@
 
 # Exposes the builder and recipe configurations to GenTests in recipes.
 
-from slave import recipe_test_api
-from slave.recipe_modules.v8 import builders
+from subordinate import recipe_test_api
+from subordinate.recipe_modules.v8 import builders
 
 class V8TestApi(recipe_test_api.RecipeTestApi):
   BUILDERS = builders.BUILDERS

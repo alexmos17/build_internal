@@ -3,7 +3,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""A tool to sleep for a random amount of time, used by the buildbot slaves.
+"""A tool to sleep for a random amount of time, used by the buildbot subordinates.
 
   This is used to prevent the cron - zerg rush/herd stampede/feeding frenzy
   of large numbers of builders starting synchronously.

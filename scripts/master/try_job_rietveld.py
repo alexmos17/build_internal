@@ -19,8 +19,8 @@ from twisted.internet import defer
 from twisted.python import log
 from twisted.web import client
 
-from master import master_utils
-from master.try_job_base import TryJobBase
+from main import main_utils
+from main.try_job_base import TryJobBase
 
 
 # Number of recent buildsets used to initialize RietveldPollerWithCache's cache.
@@ -179,7 +179,7 @@ class _RietveldPollerWithCache(base.PollingChangeSource):
 
     # Get recent BuildBot buildsets. We limit the number of fetched buildsets
     # as otherwise fetching properties of all of them would take days.
-    bsdicts = yield self.master.db.buildsets.getRecentBuildsets(
+    bsdicts = yield self.main.db.buildsets.getRecentBuildsets(
         MAX_RECENT_BUILDSETS_TO_INIT_CACHE)
 
     log.msg('[RPWC] Received %d buildset dicts' % len(bsdicts))
@@ -205,12 +205,12 @@ class _RietveldPollerWithCache(base.PollingChangeSource):
     self._processed_keys = {}
     for bsid in buildsets.keys():
       log.msg('[RPWC] Loading properties of the buildset %d' % bsid)
-      bsprops = yield self.master.db.buildsets.getBuildsetProperties(bsid)
+      bsprops = yield self.main.db.buildsets.getBuildsetProperties(bsid)
       if 'try_job_key' in bsprops:
         key = bsprops['try_job_key'][0]
         self._processed_keys[key] = buildsets[bsid]
 
-    log.msg('[RPWC] Initialized processed keys cache from master with %d '
+    log.msg('[RPWC] Initialized processed keys cache from main with %d '
             'jobs.' % len(self._processed_keys))
 
   @defer.inlineCallbacks
@@ -220,7 +220,7 @@ class _RietveldPollerWithCache(base.PollingChangeSource):
     all_jobs = []
 
     # Initialize processed keys cache if needed. We can't do it in the
-    # constructor as self.master, required for this, is not available then yet.
+    # constructor as self.main, required for this, is not available then yet.
     if self._processed_keys is None:
       yield self._InitProcessedKeysCache()
 
@@ -280,7 +280,7 @@ class TryJobRietveld(TryJobBase):
   """A try job source that gets jobs from pending Rietveld patch sets."""
 
   def __init__(self, name, pools, properties=None, last_good_urls=None,
-               code_review_sites=None, project=None, filter_master=False):
+               code_review_sites=None, project=None, filter_main=False):
     """Creates a try job source for Rietveld patch sets.
 
     Args:
@@ -293,13 +293,13 @@ class TryJobRietveld(TryJobBase):
       project: The name of the project whose review site URL to extract.
           If the project is not found in the dictionary, an exception is
           raised.
-      filter_master: Filter try jobs by master name. Necessary if several try
-          masters share the same rietveld instance.
+      filter_main: Filter try jobs by main name. Necessary if several try
+          mains share the same rietveld instance.
     """
     TryJobBase.__init__(self, name, pools, properties,
                         last_good_urls, code_review_sites)
     endpoint = self._GetRietveldEndPointForProject(
-        code_review_sites, project, filter_master)
+        code_review_sites, project, filter_main)
 
     self._poller = _RietveldPollerWithCache(endpoint, interval=10)
     self._valid_users = _ValidUserPoller(interval=12 * 60 * 60)
@@ -310,7 +310,7 @@ class TryJobRietveld(TryJobBase):
 
   @staticmethod
   def _GetRietveldEndPointForProject(code_review_sites, project,
-                                     filter_master):
+                                     filter_main):
     """Determines the correct endpoint for the chrome review site URL.
 
     Args:
@@ -318,8 +318,8 @@ class TryJobRietveld(TryJobBase):
       project: The name of the project whose review site URL to extract.
           If the project is not found in the dictionary, an exception is
           raised.
-      filter_master: Filter try jobs by master name. Necessary if several try
-          masters share the same rietveld instance.
+      filter_main: Filter try jobs by main name. Necessary if several try
+          mains share the same rietveld instance.
 
     Returns: A string with the endpoint extracted from the chrome
         review site URL, which is the URL to poll for new patch
@@ -330,9 +330,9 @@ class TryJobRietveld(TryJobBase):
 
     url = 'get_pending_try_patchsets?limit=1000'
 
-    # Filter by master name if specified.
-    if filter_master:
-      url += '&master=%s' % urllib.quote_plus(master_utils.GetMastername())
+    # Filter by main name if specified.
+    if filter_main:
+      url += '&main=%s' % urllib.quote_plus(main_utils.GetMainname())
 
     return urlparse.urljoin(code_review_sites[project], url)
 
@@ -343,7 +343,7 @@ class TryJobRietveld(TryJobBase):
 
   @defer.inlineCallbacks
   def SubmitJobs(self, jobs):
-    """Submit pending try jobs to slaves for building.
+    """Submit pending try jobs to subordinates for building.
 
     Args:
       jobs: a list of jobs.  Each job is a dictionary of properties describing
@@ -382,7 +382,7 @@ class TryJobRietveld(TryJobBase):
         cleaned_job = self.parse_options(options)
 
         yield self.get_lkgr(cleaned_job)
-        c = yield self.master.addChange(
+        c = yield self.main.addChange(
             author=','.join(cleaned_job['email']),
             # TODO(maruel): Get patchset properties to get the list of files.
             # files=[],
@@ -396,7 +396,7 @@ class TryJobRietveld(TryJobBase):
         # We need to mark it as failed otherwise it'll stay in the pending
         # state. Simulate a buildFinished event on the build.
         log.err('Got "%s" for issue %s' % (e, job.get('issue')))
-        for service in self.master.services:
+        for service in self.main.services:
           if service.__class__.__name__ == 'TryServerHttpStatusPush':
             build = {
               'properties': [
@@ -406,7 +406,7 @@ class TryJobRietveld(TryJobBase):
                 ('patchset', job['patchset'], None),
                 ('project', self._project, None),
                 ('revision', '', None),
-                ('slavename', '', None),
+                ('subordinatename', '', None),
                 ('try_job_key', job['key'], None),
               ],
               'reason': job.get('reason', ''),
@@ -424,5 +424,5 @@ class TryJobRietveld(TryJobBase):
   def setServiceParent(self, parent):
     TryJobBase.setServiceParent(self, parent)
     self._poller.setServiceParent(self)
-    self._poller.master = self.master
+    self._poller.main = self.main
     self._valid_users.setServiceParent(self)

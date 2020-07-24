@@ -7,7 +7,7 @@
 
 This script is part of the effort to move all builds to annotator-based
 systems. Any builder configured to use the AnnotatorFactory.BaseFactory()
-found in scripts/master/factory/annotator_factory.py executes a single
+found in scripts/main/factory/annotator_factory.py executes a single
 AddAnnotatedScript step. That step (found in annotator_commands.py) calls
 this script with the build- and factory-properties passed on the command
 line.
@@ -15,12 +15,12 @@ line.
 The main mode of operation is for factory_properties to contain a single
 property 'recipe' whose value is the basename (without extension) of a python
 script in one of the following locations (looked up in this order):
-  * build_internal/scripts/slave-internal/recipes
-  * build_internal/scripts/slave/recipes
-  * build/scripts/slave/recipes
+  * build_internal/scripts/subordinate-internal/recipes
+  * build_internal/scripts/subordinate/recipes
+  * build/scripts/subordinate/recipes
 
 For example, these factory_properties would run the 'run_presubmit' recipe
-located in build/scripts/slave/recipes:
+located in build/scripts/subordinate/recipes:
     { 'recipe': 'run_presubmit' }
 
 TODO(vadimsh, iannucci): The following docs are very outdated.
@@ -81,10 +81,10 @@ import collections  # Import after polyfill to get OrderedDict on 2.6
 from common import annotator
 from common import chromium_utils
 
-from slave import recipe_loader
-from slave import recipe_test_api
-from slave import recipe_util
-from slave import recipe_api
+from subordinate import recipe_loader
+from subordinate import recipe_test_api
+from subordinate import recipe_util
+from subordinate import recipe_api
 
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))

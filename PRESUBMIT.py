@@ -16,16 +16,16 @@ def CommonChecks(input_api, output_api):
     return input_api.os_path.join(input_api.PresubmitLocalPath(), *args)
 
   black_list = list(input_api.DEFAULT_BLACK_LIST) + [
-      r'.*slave/.*/build.*/.*',
-      r'.*slave/.*/isolate.*/.*',
+      r'.*subordinate/.*/build.*/.*',
+      r'.*subordinate/.*/isolate.*/.*',
       r'.*depot_tools/.*',
       r'.*scripts/release/.*',
-      r'.*scripts/slave/recipe_modules/.*',
+      r'.*scripts/subordinate/recipe_modules/.*',
       r'.*scripts/gsd_generate_index/.*',
-      r'.*masters/.*/templates/.*\.html$',
-      r'.*masters/.*/templates/.*\.css$',
-      r'.*masters/.*/public_html/.*\.html$',
-      r'.*masters/.*/public_html/.*\.css$',
+      r'.*mains/.*/templates/.*\.html$',
+      r'.*mains/.*/templates/.*\.css$',
+      r'.*mains/.*/public_html/.*\.html$',
+      r'.*mains/.*/public_html/.*\.css$',
   ]
   tests = []
   sys_path_backup = sys.path
@@ -33,7 +33,7 @@ def CommonChecks(input_api, output_api):
     sys.path = [
         join('third_party'),
         join('third_party', 'buildbot_8_4p1'),
-        join('third_party', 'buildbot_slave_8_4'),
+        join('third_party', 'buildbot_subordinate_8_4'),
         join('third_party', 'coverage-3.7.1'),
         join('third_party', 'decorator_3_3_1'),
         join('third_party', 'jinja2'),
@@ -47,8 +47,8 @@ def CommonChecks(input_api, output_api):
         # Initially, a separate run was done for unit tests but now that
         # pylint is fetched in memory with setuptools, it seems it caches
         # sys.path so modifications to sys.path aren't kept.
-        join('scripts', 'master', 'unittests'),
-        join('scripts', 'slave', 'unittests'),
+        join('scripts', 'main', 'unittests'),
+        join('scripts', 'subordinate', 'unittests'),
         join('scripts', 'tools', 'deps2git'),
         join('site_config'),
         join('tests'),
@@ -75,12 +75,12 @@ def CommonChecks(input_api, output_api):
   tests.extend(input_api.canned_checks.GetUnitTestsInDirectory(
       input_api,
       output_api,
-      input_api.os_path.join('scripts', 'master', 'unittests'),
+      input_api.os_path.join('scripts', 'main', 'unittests'),
       whitelist))
   tests.extend(input_api.canned_checks.GetUnitTestsInDirectory(
       input_api,
       output_api,
-      input_api.os_path.join('scripts', 'slave', 'unittests'),
+      input_api.os_path.join('scripts', 'subordinate', 'unittests'),
       whitelist))
   tests.extend(input_api.canned_checks.GetUnitTestsInDirectory(
       input_api,
@@ -99,7 +99,7 @@ def CommonChecks(input_api, output_api):
       whitelist))
 
   recipe_modules_tests = input_api.glob(
-      join('scripts', 'slave', 'recipe_modules', '*', 'tests'))
+      join('scripts', 'subordinate', 'recipe_modules', '*', 'tests'))
   for path in recipe_modules_tests:
     tests.extend(input_api.canned_checks.GetUnitTestsInDirectory(
         input_api,
@@ -109,9 +109,9 @@ def CommonChecks(input_api, output_api):
 
   try:
     sys.path = [join('scripts', 'common')] + sys.path
-    import master_cfg_utils  # pylint: disable=F0401
+    import main_cfg_utils  # pylint: disable=F0401
     # Run the tests.
-    with master_cfg_utils.TemporaryMasterPasswords():
+    with main_cfg_utils.TemporaryMainPasswords():
       output = input_api.RunTests(tests)
 
     output.extend(input_api.canned_checks.PanProjectChecks(
@@ -128,7 +128,7 @@ def ConditionalChecks(input_api, output_api):
   """
   tests_to_run = []
   conditional_tests = {
-      'scripts/slave/bot_update.py': ['tests/bot_update_test.py'],
+      'scripts/subordinate/bot_update.py': ['tests/bot_update_test.py'],
   }
   affected_files = set([
       f.LocalPath() for f in input_api.change.AffectedFiles()])

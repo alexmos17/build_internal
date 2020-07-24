@@ -16,7 +16,7 @@ from twisted.internet import defer
 
 from testing_support import auto_stub
 
-from master import gatekeeper
+from main import gatekeeper
 
 # Mocks confuse pylint.
 # pylint: disable=E1101
@@ -31,11 +31,11 @@ class FakePassword(object):
     return 'testpw'
 
 
-def _get_master_status():
+def _get_main_status():
   ms = mock.Mock()
-  ms.getTitle.return_value = 'Fake master'
+  ms.getTitle.return_value = 'Fake main'
   ms.getBuildbotURL.return_value = 'http://somewhere'
-  ms.getSlaveNames.return_value = ['slave1', 'slave2']
+  ms.getSubordinateNames.return_value = ['subordinate1', 'subordinate2']
   return ms
 
 
@@ -49,7 +49,7 @@ def _get_gatekeeper(tree_status_url, mock_interesting, branches=None):
       branches=branches,
       use_getname=True,
       lookup=None)
-  mn.master_status = _get_master_status()
+  mn.main_status = _get_main_status()
   # Nuke out sending emails.
   mn.sendmail = mock.Mock()
   mn.sendmail.return_value = 'email sent!'

@@ -2,17 +2,17 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
 
-class SkiaFYI(Master.Master3):
+class SkiaFYI(Main.Main3):
   project_name = 'SkiaFYI'
-  master_port = 8098
-  slave_port = 8198
-  master_port_alt = 8298
+  main_port = 8098
+  subordinate_port = 8198
+  main_port_alt = 8298
   repo_url = 'https://skia.googlesource.com/skia.git'
   buildbot_url = 'http://build.chromium.org/p/client.skia.fyi/'
   code_review_site = 'https://codereview.chromium.org'

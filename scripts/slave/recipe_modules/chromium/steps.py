@@ -258,7 +258,7 @@ class LocalGTestTest(Test):
     return self._test_runs[suffix].json.gtest_results.failures
 
 
-def generate_gtest(api, mastername, buildername, test_spec,
+def generate_gtest(api, mainname, buildername, test_spec,
                    enable_swarming=False):
   def canonicalize_test(test):
     if isinstance(test, basestring):
@@ -698,9 +698,9 @@ class BlinkTest(Test):
 
   def __init__(self, api):
     super(BlinkTest, self).__init__()
-    self.results_dir = api.path['slave_build'].join('layout-test-results')
+    self.results_dir = api.path['subordinate_build'].join('layout-test-results')
     self.layout_test_wrapper = api.path['build'].join(
-        'scripts', 'slave', 'chromium', 'layout_test_wrapper.py')
+        'scripts', 'subordinate', 'chromium', 'layout_test_wrapper.py')
 
   def run(self, api, suffix):
     args = ['--target', api.chromium.c.BUILD_CONFIG,
@@ -746,7 +746,7 @@ class BlinkTest(Test):
       buildnumber = api.properties['buildnumber']
 
       archive_layout_test_results = api.path['build'].join(
-          'scripts', 'slave', 'chromium', 'archive_layout_test_results.py')
+          'scripts', 'subordinate', 'chromium', 'archive_layout_test_results.py')
 
       archive_result = api.python(
         'archive_webkit_tests_results',
@@ -821,12 +821,12 @@ class GenerateTelemetryProfileStep(Test):
   def run(self, api, suffix):
     args = ['--run-python-script',
             '--target', self._target,
-            api.path['build'].join('scripts', 'slave',
+            api.path['build'].join('scripts', 'subordinate',
                                    'generate_profile_shim.py'),
             '--target=' + self._target,
             '--profile-type-to-generate=' + self._profile_type_to_create]
     api.python('generate_telemetry_profiles',
-               api.path['build'].join('scripts', 'slave','runtest.py'),
+               api.path['build'].join('scripts', 'subordinate','runtest.py'),
                args)
 
   @property

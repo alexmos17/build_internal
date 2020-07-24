@@ -2,15 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
-class ChromiumOSTryServer(Master.ChromiumOSBase):
+class ChromiumOSTryServer(Main.ChromiumOSBase):
   project_name = 'ChromiumOS Try Server'
-  master_port = 8049
-  slave_port = 8149
-  master_port_alt = 8249
+  main_port = 8049
+  subordinate_port = 8149
+  main_port_alt = 8249
   try_job_port = 8349
   buildbot_url = 'https://uberchromegw.corp.google.com/p/tryserver.chromiumos/'
   repo_url_ext = 'https://chromium.googlesource.com/chromiumos/tryjobs.git'

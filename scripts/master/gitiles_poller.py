@@ -156,7 +156,7 @@ class GitilesPoller(PollingChangeSource):
     self.repo_host = u.netloc
     self.repo_path = urllib.quote(u.path)
     if branches is None:
-      branches = ['master']
+      branches = ['main']
     elif isinstance(branches, basestring):
       branches = [branches]
     self.branches = []
@@ -190,7 +190,7 @@ class GitilesPoller(PollingChangeSource):
   def startService(self):
     # Initialize revision comparator with revisions from all changes
     # known to buildbot.
-    yield self.comparator.initialize(self.master.db)
+    yield self.comparator.initialize(self.main.db)
 
     # Get the head commit for each branch being polled.
     branches = yield self._get_branches()
@@ -227,7 +227,7 @@ class GitilesPoller(PollingChangeSource):
     defer.returnValue(result)
 
   def _create_change(self, commit_json, branch):
-    """Send a new Change object to the buildbot master."""
+    """Send a new Change object to the buildbot main."""
     if not commit_json:
       return
     if self.change_filter and not self.change_filter(commit_json, branch):
@@ -264,7 +264,7 @@ class GitilesPoller(PollingChangeSource):
     revlink = ''
     if self.revlinktmpl and revision:
       revlink = self.revlinktmpl % revision
-    return self.master.addChange(
+    return self.main.addChange(
         author=commit_author,
         revision=revision,
         files=commit_files,
@@ -357,7 +357,7 @@ class GitilesPoller(PollingChangeSource):
 
   def describe(self):
     status = self.__class__.__name__
-    if not self.master:
+    if not self.main:
       status += ' [STOPPED - check log]'
     return '%s repo_url=%s' % (status, self.repo_url)
 

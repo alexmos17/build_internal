@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave.recipe_config import config_item_context, ConfigGroup
-from slave.recipe_config import Single, Static, BadConf
-from slave.recipe_config_types import Path
+from subordinate.recipe_config import config_item_context, ConfigGroup
+from subordinate.recipe_config import Single, Static, BadConf
+from subordinate.recipe_config_types import Path
 
 
 def BaseConfig(PERF_ID=None, PERF_CONFIG=None, **_kwargs):

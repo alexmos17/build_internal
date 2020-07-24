@@ -15,7 +15,7 @@ DEPS = [
 
 def GenSteps(api):
   # Checkout swarming client.
-  api.swarming_client.checkout('master')
+  api.swarming_client.checkout('main')
 
   # Ensure swarming_client version is fresh enough.
   api.swarming.check_client_version()

@@ -4,7 +4,7 @@
 
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-from master.factory import annotator_factory
+from main.factory import annotator_factory
 
 m_annotator = annotator_factory.AnnotatorFactory()
 
@@ -19,7 +19,7 @@ def Update(c):
   specs = [
     {
       'name': 'Linux64 Debug (parallel)',
-      'slavebuilddir': 'linux',
+      'subordinatebuilddir': 'linux',
     }
   ]
 
@@ -29,6 +29,6 @@ def Update(c):
         'factory': m_annotator.BaseFactory('webrtc/standalone'),
         'notify_on_missing': True,
         'category': 'linux',
-        'slavebuilddir': spec['slavebuilddir'],
+        'subordinatebuilddir': spec['subordinatebuilddir'],
       } for spec in specs
   ])

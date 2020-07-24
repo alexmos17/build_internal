@@ -12,8 +12,8 @@ ROOT_PATH = os.path.abspath(os.path.join(
   SCRIPT_PATH, os.pardir, os.pardir, os.pardir))
 BASE_DIRS = [
   SCRIPT_PATH,
-  os.path.join(ROOT_PATH, 'build_internal', 'scripts', 'slave'),
-  os.path.join(ROOT_PATH, 'build_internal', 'scripts', 'slave-internal')
+  os.path.join(ROOT_PATH, 'build_internal', 'scripts', 'subordinate'),
+  os.path.join(ROOT_PATH, 'build_internal', 'scripts', 'subordinate-internal')
 ]
 MODULE_DIRS = lambda: [os.path.join(x, 'recipe_modules') for x in BASE_DIRS]
 RECIPE_DIRS = lambda: [os.path.join(x, 'recipes') for x in BASE_DIRS]

@@ -6,7 +6,7 @@ DEPS = [
   'step',
 ]
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 # Just for readability. Don't use global variables in real code.
 API = None

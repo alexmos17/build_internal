@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import master_config
-from master.factory import chromium_factory
+from main import main_config
+from main.factory import chromium_factory
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 F = helper.Factory
 T = helper.Triggerable
@@ -52,7 +52,7 @@ sharded_tests = [
 ################################################################################
 
 # Archive location
-rel_archive = master_config.GetGSUtilUrl('chromium-build-transfer',
+rel_archive = main_config.GetGSUtilUrl('chromium-build-transfer',
                                          'win-latest-rel')
 
 # Triggerable scheduler for testers
@@ -68,7 +68,7 @@ B('Win Builder', 'f_win_rel', scheduler='global_scheduler',
 # AND archives the build to chromium-webkit-snapshots for prosperity.
 F('f_win_rel', win().ChromiumFactory(
     build_url=rel_archive,
-    slave_type='Builder',
+    subordinate_type='Builder',
     options=['--build-tool=ninja', '--compiler=goma', 'chromium_builder'],
     factory_properties={
         'trigger': 's7_webkit_builder_rel_trigger',
@@ -90,7 +90,7 @@ F('f_win_rel', win().ChromiumFactory(
 
 B('Win7 Tests', 'f_win_rel_tests', scheduler='s7_webkit_builder_rel_trigger')
 F('f_win_rel_tests', win().ChromiumFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=rel_archive,
     tests=[
       'installer',
@@ -139,5 +139,5 @@ F('f_win_dbg', win().ChromiumFactory(
         'blink_config': 'blink',
     }))
 
-def Update(_config, _active_master, c):
+def Update(_config, _active_main, c):
   return helper.Update(c)

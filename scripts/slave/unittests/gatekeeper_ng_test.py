@@ -28,9 +28,9 @@ import urlparse
 
 import test_env  # pylint: disable=W0403,W0611
 
-from slave import gatekeeper_ng
-from slave import gatekeeper_ng_config
-from slave import build_scan_db
+from subordinate import gatekeeper_ng
+from subordinate import gatekeeper_ng_config
+from subordinate import build_scan_db
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -112,7 +112,7 @@ class Builder(object):
     self.builds = builds
 
 
-class Master(object):
+class Main(object):
   def __init__(self, title, url, builders):
     self.title = title
     self.url = url
@@ -149,8 +149,8 @@ class GatekeeperTest(unittest.TestCase):
     self.mailer_url = 'https://chromium-build.appspot.com/mailer/email'
     self.handle_url_str(self.mailer_url, '')
 
-    self.master_url_root = 'http://build.chromium.org/p/'
-    self.masters = [self.create_generic_build_tree('Chromium FYI',
+    self.main_url_root = 'http://build.chromium.org/p/'
+    self.mains = [self.create_generic_build_tree('Chromium FYI',
                                                    'chromium.fyi')]
 
     self.build_db_file = self.fill_tempfile('{}')
@@ -173,19 +173,19 @@ class GatekeeperTest(unittest.TestCase):
       if os.path.exists(filename):
         os.remove(filename)
 
-  def handle_build_tree(self, masters):
-    """Before calling gatekeeper, synthesize master and build json.
+  def handle_build_tree(self, mains):
+    """Before calling gatekeeper, synthesize main and build json.
 
     Also adds URL handlers where needed.
     """
 
-    for master in masters:
-      master_json = {'builders': {},
-                     'project': {'buildbotURL': master.url + '/',
-                                 'title': master.title}}
+    for main in mains:
+      main_json = {'builders': {},
+                     'project': {'buildbotURL': main.url + '/',
+                                 'title': main.title}}
 
-      for builder in master.builders:
-        builder_url = master.url + '/builders/%s' % urllib.quote(builder.name)
+      for builder in main.builders:
+        builder_url = main.url + '/builders/%s' % urllib.quote(builder.name)
         builder_json = {'cachedBuilds': [],
                         'currentBuilds': []}
 
@@ -225,13 +225,13 @@ class GatekeeperTest(unittest.TestCase):
           else:
             builder_json['currentBuilds'].append(build.number)
 
-          build_json_url = master.url + '/json/builders/%s/builds/%d' % (
+          build_json_url = main.url + '/json/builders/%s/builds/%d' % (
               urllib.quote(builder.name), build.number)
 
           self.handle_url_json(build_json_url, build_json)
 
-        master_json['builders'][builder.name] = builder_json
-      self.handle_url_json(master.url + '/json', master_json)
+        main_json['builders'][builder.name] = builder_json
+      self.handle_url_json(main.url + '/json', main_json)
 
   @staticmethod
   def create_generic_build(number, committers):
@@ -242,23 +242,23 @@ class GatekeeperTest(unittest.TestCase):
 
     return Build(number, [step0, step1, step2, step3], committers)
 
-  def create_generic_build_tree(self, master_title, master_url_chunk):
+  def create_generic_build_tree(self, main_title, main_url_chunk):
     build = GatekeeperTest.create_generic_build(1, ['a_committer@chromium.org'])
 
     builder = Builder('mybuilder', [build])
 
-    return Master(master_title, self.master_url_root + master_url_chunk,
+    return Main(main_title, self.main_url_root + main_url_chunk,
                   [builder])
 
   def call_gatekeeper(self, build_db=None, json=None):  # pylint: disable=W0621
     """Sets up handlers for all the json and actually calls gatekeeper."""
     self.url_calls = []
-    self.handle_build_tree(self.masters)
+    self.handle_build_tree(self.mains)
     json = json or self.gatekeeper_file
     self._gatekeeper_config = self._gatekeeper_config or {}
     if not build_db:
-      build_db = build_scan_db.gen_db(masters={
-          self.masters[0].url: {
+      build_db = build_scan_db.gen_db(mains={
+          self.mains[0].url: {
               'mybuilder': {
                   0: build_scan_db.gen_build(finished=True)
               }
@@ -284,10 +284,10 @@ class GatekeeperTest(unittest.TestCase):
     return [call['url'] for call in self.url_calls]
 
 
-  def process_build_db(self, master, builder):
+  def process_build_db(self, main, builder):
     """Reads the build_db from a file and splits out finished/unfinished."""
     new_build_db = build_scan_db.get_build_db(self.build_db_file)
-    builds = new_build_db.masters[master][builder]
+    builds = new_build_db.mains[main][builder]
     finished_new_builds = dict(
         (k, v) for k, v in builds.iteritems() if v.finished)
     unfinished_new_builds = dict(
@@ -319,18 +319,18 @@ class GatekeeperTest(unittest.TestCase):
     else:
       self.fail('Unable to read self._gatekeeper_config while writing to it.')
 
-  def add_gatekeeper_master_config(self, master_url, data):
+  def add_gatekeeper_main_config(self, main_url, data):
     """Adds a gatekeeper category to a build."""
     with self.gatekeeper_config_editor() as gatekeeper_config:
-      gatekeeper_config.setdefault('masters', {}).setdefault(master_url, [])
-      gatekeeper_config['masters'][master_url].append({})
-      self.add_gatekeeper_master_section(master_url, -1, data)
+      gatekeeper_config.setdefault('mains', {}).setdefault(main_url, [])
+      gatekeeper_config['mains'][main_url].append({})
+      self.add_gatekeeper_main_section(main_url, -1, data)
 
-  def add_gatekeeper_master_section(self, master_url, idx, data):
+  def add_gatekeeper_main_section(self, main_url, idx, data):
     with self.gatekeeper_config_editor() as gatekeeper_config:
       # Don't stomp 'builders' if it's there.
       for key in data:
-        gatekeeper_config['masters'][master_url][idx][key] = data[key]
+        gatekeeper_config['mains'][main_url][idx][key] = data[key]
 
   def add_gatekeeper_category(self, category, data):
     """Adds a gatekeeper category to a build."""
@@ -338,23 +338,23 @@ class GatekeeperTest(unittest.TestCase):
       gatekeeper_config.setdefault('categories', {})
       gatekeeper_config['categories'][category] = data
 
-  def add_gatekeeper_section(self, master_url, builder, data, idx=-1):
+  def add_gatekeeper_section(self, main_url, builder, data, idx=-1):
     """Adds a gatekeeper_spec to a build."""
     with self.gatekeeper_config_editor() as gatekeeper_config:
-      gatekeeper_config.setdefault('masters', {}).setdefault(master_url, [])
+      gatekeeper_config.setdefault('mains', {}).setdefault(main_url, [])
       if idx == -1:
-        gatekeeper_config['masters'][master_url].append({})
-      gatekeeper_config['masters'][master_url][idx].setdefault('builders', {})
-      gatekeeper_config['masters'][master_url][idx]['builders'][builder] = data
+        gatekeeper_config['mains'][main_url].append({})
+      gatekeeper_config['mains'][main_url][idx].setdefault('builders', {})
+      gatekeeper_config['mains'][main_url][idx]['builders'][builder] = data
 
   def get_gatekeeper_section_shas(self):
     """Return the SHAs of all the gatekeeper sections."""
     sections = {}
     with self.gatekeeper_config_reader() as gatekeeper_config:
-      for master_url, master in gatekeeper_config.iteritems():
-        sections[master_url] = [
+      for main_url, main in gatekeeper_config.iteritems():
+        sections[main_url] = [
             gatekeeper_ng_config.gatekeeper_section_hash(section)
-            for section in master]
+            for section in main]
     return sections
 
   def _url_handler(self, req, params=None):
@@ -405,28 +405,28 @@ class GatekeeperTest(unittest.TestCase):
   def testIgnoreNoGatekeeper(self):
     """Check that logs aren't read unless the builder is noted in the config."""
 
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app'])
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {})
 
     urls = self.call_gatekeeper()
-    self.assertEquals(urls, [self.masters[0].url + '/json'])
+    self.assertEquals(urls, [self.mains[0].url + '/json'])
 
   def testFailedBuildDetected(self):
     """Test that an erroneous build result closes the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].results = 2
-    self.add_gatekeeper_master_config(self.masters[0].url,
+    self.mains[0].builders[0].builds[0].results = 2
+    self.add_gatekeeper_main_config(self.mains[0].url,
                                       {'respect_build_status': True})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {},
                                 idx=0)
 
@@ -439,15 +439,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testRetryDoesntClose(self):
     """Test that a step marked retry doesn't close the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].results = 5
-    self.add_gatekeeper_master_config(self.masters[0].url,
+    self.mains[0].builders[0].builds[0].results = 5
+    self.add_gatekeeper_main_config(self.mains[0].url,
                                       {'respect_build_status': True})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {},
                                 idx=0)
 
@@ -456,15 +456,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testExceptionDoesntClose(self):
     """Test that a step marked exception doesn't close the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].results = 4
-    self.add_gatekeeper_master_config(self.masters[0].url,
+    self.mains[0].builders[0].builds[0].results = 4
+    self.add_gatekeeper_main_config(self.mains[0].url,
                                       {'respect_build_status': True})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {},
                                 idx=0)
 
@@ -473,17 +473,17 @@ class GatekeeperTest(unittest.TestCase):
 
   def testFailedBuildNoEmail(self):
     """Test that no email is sent if there are no watchers."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
 
-    self.masters[0].builders[0].builds[0].results = 3
-    self.masters[0].builders[0].builds[0].blame = []
-    self.add_gatekeeper_master_config(self.masters[0].url,
+    self.mains[0].builders[0].builds[0].results = 3
+    self.mains[0].builders[0].builds[0].blame = []
+    self.add_gatekeeper_main_config(self.mains[0].url,
                                       {'respect_build_status': True})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {},
                                 idx=0)
 
@@ -494,13 +494,13 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStepNonCloserFailureIgnored(self):
     """Test that a non-closing failure is ignored."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[2].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[2].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper()
@@ -508,13 +508,13 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStepCloserFailureDetected(self):
     """Test that a failed closing step closes the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     self.call_gatekeeper()
@@ -527,13 +527,13 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStepExceptionIgnored(self):
     """Test that an exception on a closing step doesn't close the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [5, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [5, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper()
@@ -541,13 +541,13 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStepCloserFailureOptional(self):
     """Test that a failed closing_optional step closes the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_optional': ['step1']})
 
     self.call_gatekeeper()
@@ -560,13 +560,13 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStepCloserFailureOptionalStar(self):
     """Test that a failed closing_optional * step closes the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_optional': ['*']})
 
     self.call_gatekeeper()
@@ -579,12 +579,12 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStepOmissionDetected(self):
     """Test that the lack of a closing step closes the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step4']})
 
     self.call_gatekeeper()
@@ -596,12 +596,12 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStepOmissionOptional(self):
     """Test that the lack of a closing_optional step doesn't close the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_optional': ['step4']})
 
     self.call_gatekeeper()
@@ -611,12 +611,12 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStepForgivingOmissionOptional(self):
     """Test that the lack of a forgiving_optional step doesn't close tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'forgiving_optional': ['step4']})
 
     self.call_gatekeeper()
@@ -627,16 +627,16 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStepNotStarted(self):
     """Test that a skipped closing step closes the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    self.masters[0].builders[0].builds[0].steps[1].isStarted = False
-    self.masters[0].builders[0].builds[0].steps[1].isFinished = False
+    self.mains[0].builders[0].builds[0].steps[1].isStarted = False
+    self.mains[0].builders[0].builds[0].steps[1].isFinished = False
 
     self.call_gatekeeper()
 
@@ -648,17 +648,17 @@ class GatekeeperTest(unittest.TestCase):
 
   def testGatekeeperOOO(self):
     """Test that gatekeeper_spec works even if not the first step."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
 
-    spec = self.masters[0].builders[0].builds[0].steps
-    self.masters[0].builders[0].builds[0].steps = spec[1:]+spec[:1]
+    spec = self.mains[0].builders[0].builds[0].steps
+    self.mains[0].builders[0].builds[0].steps = spec[1:]+spec[:1]
 
     self.call_gatekeeper()
 
@@ -670,14 +670,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testFailedBuildClosesTree(self):
     """Test that a failed build calls to the status app."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper()
@@ -685,14 +685,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testIgnoredStepsDontCloseTree(self):
     """Test that ignored steps don't call to the status app."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step2']})
 
     urls = self.call_gatekeeper()
@@ -700,14 +700,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testExcludedStepsDontCloseTree(self):
     """Test that excluded steps don't call to the status app."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'excluded_steps': ['step1']})
 
@@ -716,36 +716,36 @@ class GatekeeperTest(unittest.TestCase):
 
   def testExcludedBuildersDontCloseTree(self):
     """Test that excluded builders don't call to the status app."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'excluded_builders': [
-                                     self.masters[0].builders[0].name]})
+                                     self.mains[0].builders[0].name]})
 
     urls = self.call_gatekeeper()
     self.assertNotIn(self.set_status_url, urls)
 
   def testOpenTree(self):
     """Test that we open the tree if no tracked failures."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--open-tree',
                      '--password-file', self.status_secret_file])
 
-    self.masters[0].builders[0].builds[0].finished = False
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].finished = False
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True, succeeded=True)
             }
@@ -781,23 +781,23 @@ class GatekeeperTest(unittest.TestCase):
 
   def testOpenTreeOnUnfinishedBuild(self):
     """Test that the tree opens if builds succeed on previously failed steps."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--open-tree',
                      '--password-file', self.status_secret_file])
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.masters[0].builders[0].builds[0].finished = False
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].finished = False
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
-    self.masters[0].builders[0].builds[0].finished = False
+    self.mains[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds[0].finished = False
 
     # Open the tree if it was previously automatically closed.
     self.handle_url_json(self.get_status_url, {
@@ -812,19 +812,19 @@ class GatekeeperTest(unittest.TestCase):
 
   def testOpenTreeIfFailedFinishedStepsSucceeded(self):
     """Test that we open the tree if no tracked failures."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--open-tree',
                      '--password-file', self.status_secret_file])
 
-    self.masters[0].builders[0].builds[0].finished = False
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].finished = False
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(
                   finished=True,
@@ -847,7 +847,7 @@ class GatekeeperTest(unittest.TestCase):
 
   def testOpenTreeIfMultipleStepsSucceeded(self):
     """Test that we open the tree if all failing steps succeded."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--open-tree',
@@ -855,20 +855,20 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds.append(new_build)
 
-    self.masters[0].builders[0].builds[0].finished = False
-    self.masters[0].builders[0].builds[0].steps[0].results = [2, None]
-    self.masters[0].builders[0].builds[0].steps[2].results = [None, None]
-    self.masters[0].builders[0].builds[0].steps[3].results = [None, None]
+    self.mains[0].builders[0].builds[0].finished = False
+    self.mains[0].builders[0].builds[0].steps[0].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[2].results = [None, None]
+    self.mains[0].builders[0].builds[0].steps[3].results = [None, None]
 
-    self.masters[0].builders[0].builds[1].finished = False
-    self.masters[0].builders[0].builds[1].steps[1].results = [None, None]
-    self.masters[0].builders[0].builds[1].steps[2].results = [None, None]
-    self.masters[0].builders[0].builds[1].steps[3].results = [None, None]
+    self.mains[0].builders[0].builds[1].finished = False
+    self.mains[0].builders[0].builds[1].steps[1].results = [None, None]
+    self.mains[0].builders[0].builds[1].steps[2].results = [None, None]
+    self.mains[0].builders[0].builds[1].steps[3].results = [None, None]
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': [
                                      'step0',
                                      'step1',
@@ -876,8 +876,8 @@ class GatekeeperTest(unittest.TestCase):
                                      'step3',
                                  ]})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(
                   finished=True,
@@ -900,7 +900,7 @@ class GatekeeperTest(unittest.TestCase):
 
   def testOpenTreeIfMultipleStepsSucceededInFlight(self):
     """Test we open the tree if all newly-failing builds have steps succeed."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--open-tree',
@@ -908,26 +908,26 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds.append(new_build)
     new_build = self.create_generic_build(
         3, ['a_third_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds.append(new_build)
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
 
-    self.masters[0].builders[0].builds[1].finished = False
-    self.masters[0].builders[0].builds[1].steps[0].results = [2, None]
-    self.masters[0].builders[0].builds[1].steps[2].results = [None, None]
-    self.masters[0].builders[0].builds[1].steps[3].results = [None, None]
+    self.mains[0].builders[0].builds[1].finished = False
+    self.mains[0].builders[0].builds[1].steps[0].results = [2, None]
+    self.mains[0].builders[0].builds[1].steps[2].results = [None, None]
+    self.mains[0].builders[0].builds[1].steps[3].results = [None, None]
 
-    self.masters[0].builders[0].builds[2].finished = False
-    self.masters[0].builders[0].builds[2].steps[1].results = [None, None]
-    self.masters[0].builders[0].builds[2].steps[2].results = [None, None]
-    self.masters[0].builders[0].builds[2].steps[3].results = [None, None]
+    self.mains[0].builders[0].builds[2].finished = False
+    self.mains[0].builders[0].builds[2].steps[1].results = [None, None]
+    self.mains[0].builders[0].builds[2].steps[2].results = [None, None]
+    self.mains[0].builders[0].builds[2].steps[3].results = [None, None]
 
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': [
                                      'step0',
                                      'step1',
@@ -935,8 +935,8 @@ class GatekeeperTest(unittest.TestCase):
                                      'step3',
                                  ]})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(
                   finished=True, succeeded=True)
@@ -957,24 +957,24 @@ class GatekeeperTest(unittest.TestCase):
 
   def testBuildStatusWrittenToBuildDB(self):
     """Test that build success and failure is written to the build_db."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.masters[0].builders[0].builds[0].finished = True
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].finished = True
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     build_db = build_scan_db.gen_db()
     self.call_gatekeeper(build_db=build_db)
     build_db = build_scan_db.get_build_db(self.build_db_file)
-    self.assertEquals(build_db.masters, {
-      self.masters[0].url: {
-        self.masters[0].builders[0].name: {
+    self.assertEquals(build_db.mains, {
+      self.mains[0].url: {
+        self.mains[0].builders[0].name: {
           1: build_scan_db.gen_build(finished=True)
         }
       }
@@ -982,18 +982,18 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds.append(new_build)
     new_build = self.create_generic_build(
         3, ['a_third_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
-    self.masters[0].builders[0].builds[1].steps[2].results = [2, None]
-    self.masters[0].builders[0].builds[1].finished = True
-    self.masters[0].builders[0].builds[2].finished = False
+    self.mains[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds[1].steps[2].results = [2, None]
+    self.mains[0].builders[0].builds[1].finished = True
+    self.mains[0].builders[0].builds[2].finished = False
     self.call_gatekeeper(build_db=build_db)
     build_db = build_scan_db.get_build_db(self.build_db_file)
-    self.assertEquals(build_db.masters, {
-      self.masters[0].url: {
-        self.masters[0].builders[0].name: {
+    self.assertEquals(build_db.mains, {
+      self.mains[0].url: {
+        self.mains[0].builders[0].name: {
           2: build_scan_db.gen_build(finished=True, succeeded=True),
           3: build_scan_db.gen_build(finished=False, succeeded=False)
         }
@@ -1002,12 +1002,12 @@ class GatekeeperTest(unittest.TestCase):
 
   def testDefaultSubjectTemplate(self):
     """Test that the subject template is set by default."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step4']})
 
     self.call_gatekeeper()
@@ -1021,14 +1021,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testDefaultStatusTemplate(self):
     """Test that the status template is set by default."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--revision-properties', 'revision,got_webkit_revision'])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     self.call_gatekeeper()
@@ -1043,7 +1043,7 @@ class GatekeeperTest(unittest.TestCase):
     Also checks that revisions set in --revision-properties are set as template
     variables.
     """
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--revision-properties', 'revision,got_webkit_revision'])
@@ -1054,16 +1054,16 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(1, ['a_committer@chromium.org'])
     new_builder = Builder('my builder', [new_build])
-    self.masters[0].builders.append(new_builder)
+    self.mains[0].builders.append(new_builder)
 
-    self.masters[0].builders[1].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[1].name,
+    self.mains[0].builders[1].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[1].name,
                                 {'closing_steps': ['step1'],
                                  'status_template': template})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'my builder': {
                 0: build_scan_db.gen_build(finished=True)
             }
@@ -1087,16 +1087,16 @@ class GatekeeperTest(unittest.TestCase):
 
   def testEmailJson(self):
     """Test that the email json is formatted correctly."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
     subject_template = 'build %(result)s, oh no!'
-    self.masters[0].builders[0].builds[0].results = 2
-    self.add_gatekeeper_master_config(self.masters[0].url,
+    self.mains[0].builders[0].builds[0].results = 2
+    self.add_gatekeeper_main_config(self.mains[0].url,
                                       {'respect_build_status': True})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'subject_template': subject_template},
                                 idx=0)
 
@@ -1107,12 +1107,12 @@ class GatekeeperTest(unittest.TestCase):
         self.url_calls[-1]['params'])
     self.assertEquals(mailer_data['recipients'], ['a_committer@chromium.org'])
 
-    build_url = self.masters[0].url + '/builders/%s/builds/%d' % (
-        self.masters[0].builders[0].name,
-        self.masters[0].builders[0].builds[0].number)
+    build_url = self.mains[0].url + '/builders/%s/builds/%d' % (
+        self.mains[0].builders[0].name,
+        self.mains[0].builders[0].builds[0].number)
 
     step_dicts = []
-    for step in self.masters[0].builders[0].builds[0].steps:
+    for step in self.mains[0].builders[0].builds[0].steps:
       step_url = build_url + '/steps/%s' % step.name
       step_json = {'name': step.name,
                    'logs': [],
@@ -1131,9 +1131,9 @@ class GatekeeperTest(unittest.TestCase):
     self.assertEquals(mailer_data['result'], 2)
     self.assertEquals(mailer_data['blamelist'], ['a_committer@chromium.org'])
     self.assertEquals(mailer_data['changes'],
-        self.masters[0].builders[0].builds[0].sourcestamp['changes'])
+        self.mains[0].builders[0].builds[0].sourcestamp['changes'])
     self.assertEquals(mailer_data['waterfall_url'], unicode(
-        self.masters[0].url))
+        self.mains[0].url))
 
     self.assertEquals(mailer_data['build_url'], unicode(build_url))
     self.assertEquals(mailer_data['project_name'], unicode('Chromium FYI'))
@@ -1146,19 +1146,19 @@ class GatekeeperTest(unittest.TestCase):
 
   def testIgnorePastFailures(self):
     """If the build_db is nonexistent, don't fail on past builds."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--email-app-secret-file=%s' % self.email_secret_file])
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds.append(new_build)
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.masters[0].builders[0].builds[1].steps[1].results = [2, None]
-    self.masters[0].builders[0].builds[1].finished = False
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[1].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[1].finished = False
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     build_db = build_scan_db.gen_db()
@@ -1169,14 +1169,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testHonorNewFailures(self):
     """If the build_db is nonexistent, fail on current builds."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.masters[0].builders[0].builds[0].finished = False
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].finished = False
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     build_db = build_scan_db.gen_db()
@@ -1185,29 +1185,29 @@ class GatekeeperTest(unittest.TestCase):
 
   def testIncrementalScanning(self):
     """Test that builds in the build DB are skipped."""
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 1: build_scan_db.gen_build(finished=True)}}})
 
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--email-app-secret-file=%s' % self.email_secret_file])
 
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
 
-    self.masters[0].builders[0].builds.append(
+    self.mains[0].builders[0].builds.append(
         GatekeeperTest.create_generic_build(2,[
             'a_second_committer@chromium.org']))
-    self.masters[0].builders[0].builds[1].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[1].steps[1].results = [2, None]
 
     self.call_gatekeeper(build_db=build_db)
     _, finished_new_builds = self.process_build_db(
-        self.masters[0].url, 'mybuilder')
-    shas = self.get_gatekeeper_section_shas()[self.masters[0].url]
+        self.mains[0].url, 'mybuilder')
+    shas = self.get_gatekeeper_section_shas()[self.mains[0].url]
     self.assertEquals(finished_new_builds,
                       {2: build_scan_db.gen_build(finished=True, triggered={
                           shas[0]: ['step1']})})
@@ -1226,13 +1226,13 @@ class GatekeeperTest(unittest.TestCase):
 
   def testSheriffParsing(self):
     """Test that sheriff annotations are properly parsed."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'sheriff_classes': ['sheriff_android']})
 
@@ -1257,15 +1257,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testNoSheriff(self):
     """Test that a no-sheriff condition works OK (weekends)."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].blame = []
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].blame = []
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'sheriff_classes': ['sheriff_android']})
 
@@ -1282,13 +1282,13 @@ class GatekeeperTest(unittest.TestCase):
 
   def testNoSheriffButBlame(self):
     """Test that no-sheriff works ok with a blamelist."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'sheriff_classes': ['sheriff_android']})
 
@@ -1306,12 +1306,12 @@ class GatekeeperTest(unittest.TestCase):
 
   def testMultiSheriff(self):
     """Test that multiple sheriff lists can be merged."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'sheriff_classes': ['sheriff_android',
                                                      'sheriff']})
@@ -1342,13 +1342,13 @@ class GatekeeperTest(unittest.TestCase):
 
   def testNotifyParsing(self):
     """Test that additional watchers can be merged to the mailing list."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'tree_notify': ['a_watcher@chromium.org']})
 
@@ -1369,14 +1369,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testNotifyNoBlame(self):
     """Test that notify works with no blamelist."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].blame = []
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].blame = []
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'tree_notify': ['a_watcher@chromium.org']})
 
@@ -1391,15 +1391,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testForgivingSteps(self):
     """Test that forgiving steps set status but don't email blamelist."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                      ])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'forgiving_steps': ['step1']})
     urls = self.call_gatekeeper()
 
@@ -1408,15 +1408,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testForgivingOptional(self):
     """Test that forgiving_optional steps set status but don't email."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                      ])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'forgiving_optional': ['step1']})
     urls = self.call_gatekeeper()
 
@@ -1425,15 +1425,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testForgivingOptionalStar(self):
     """Test that forgiving_optional * sets status but doesn't email."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                      ])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'forgiving_optional': ['*']})
     urls = self.call_gatekeeper()
 
@@ -1442,15 +1442,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testForgiveAllSteps(self):
     """Test that setting forgive_all prevents emailing the blamelist."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                      ])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'forgive_all': 'true'})
     urls = self.call_gatekeeper()
@@ -1460,15 +1460,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testForgiveAllOptionalSteps(self):
     """Test that setting forgive_all prevents emailing the blamelist."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                      ])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_optional': ['step1'],
                                  'forgive_all': 'true'})
     urls = self.call_gatekeeper()
@@ -1480,14 +1480,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testEmptyRevisionInfoWorks(self):
     """Test that an empty build_db still lets revisions through."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions'])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper()
@@ -1498,18 +1498,18 @@ class GatekeeperTest(unittest.TestCase):
 
   def testOlderRevisionIgnored(self):
     """Test that an old revision is ignored."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions'])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)
             }
@@ -1525,25 +1525,25 @@ class GatekeeperTest(unittest.TestCase):
 
   def testOlderCommitPositionIgnored(self):
     """Test that an old commit position is ignored."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions',
                      '--revision-properties', 'got_revision_cp'])
 
-    self.masters[0].builders[0].builds[0].properties = [
-        ['got_revision_cp', 'refs/heads/master@{#72453}', 'GatekeeperTest'],
+    self.mains[0].builders[0].builds[0].properties = [
+        ['got_revision_cp', 'refs/heads/main@{#72453}', 'GatekeeperTest'],
         ['revision', 'a cool git sha', 'GatekeeperTest'],
         ['got_webkit_revision', 100, 'GatekeeperTest'],
     ]
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)
             }
@@ -1559,18 +1559,18 @@ class GatekeeperTest(unittest.TestCase):
 
   def testNewerRevisionAccepted(self):
     """Test that a newer revision is accepted."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions'])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)
             }
@@ -1586,25 +1586,25 @@ class GatekeeperTest(unittest.TestCase):
 
   def testNewerCommitPositionAccepted(self):
     """Test that a newer revision is accepted."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions',
                      '--revision-properties', 'got_revision_cp'])
 
-    self.masters[0].builders[0].builds[0].properties = [
-        ['got_revision_cp', 'refs/heads/master@{#72453}', 'GatekeeperTest'],
+    self.mains[0].builders[0].builds[0].properties = [
+        ['got_revision_cp', 'refs/heads/main@{#72453}', 'GatekeeperTest'],
         ['revision', 'a cool git sha', 'GatekeeperTest'],
         ['got_webkit_revision', 100, 'GatekeeperTest'],
     ]
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)
             }
@@ -1621,18 +1621,18 @@ class GatekeeperTest(unittest.TestCase):
 
   def testRevisionChangeClears(self):
     """Test that changing the revision forces a reset in the build_db."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions'])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)
             }
@@ -1649,19 +1649,19 @@ class GatekeeperTest(unittest.TestCase):
 
   def testMultiRevisionAccepted(self):
     """Test that a newer multi-revision is accepted."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions',
                      '--revision-properties', 'revision,got_webkit_revision'])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)
             }
@@ -1679,19 +1679,19 @@ class GatekeeperTest(unittest.TestCase):
 
   def testMultiRevisionRejected(self):
     """Test that an older multi-revision is rejected."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions',
                      '--revision-properties', 'revision,got_webkit_revision'])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)
             }
@@ -1709,7 +1709,7 @@ class GatekeeperTest(unittest.TestCase):
 
   def testHighestGetsWritten(self):
     """Test that only the highest revision is written to the build_db."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions',
@@ -1723,19 +1723,19 @@ class GatekeeperTest(unittest.TestCase):
     ]
     new_build.times = [200, 300]
     new_builder = Builder('mybuilder2', [new_build])
-    self.masters[0].builders.append(new_builder)
+    self.mains[0].builders.append(new_builder)
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.masters[0].builders[1].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[1].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[1].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[1].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)
             },
@@ -1756,7 +1756,7 @@ class GatekeeperTest(unittest.TestCase):
 
   def testLatestTriggered(self):
     """Test that only the latest failure is triggered if multiple are seen."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions',
@@ -1770,7 +1770,7 @@ class GatekeeperTest(unittest.TestCase):
     ]
     new_build.times = [200, 300]
     new_builder = Builder('mybuilder2', [new_build])
-    self.masters[0].builders.append(new_builder)
+    self.mains[0].builders.append(new_builder)
 
     newer_build = self.create_generic_build(
         3, ['a_third_committer@chromium.org'])
@@ -1779,23 +1779,23 @@ class GatekeeperTest(unittest.TestCase):
         ['got_webkit_revision', 200, 'GatekeeperTest'],
     ]
     newer_builder = Builder('mybuilder3', [newer_build])
-    self.masters[0].builders.append(newer_builder)
+    self.mains[0].builders.append(newer_builder)
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.masters[0].builders[1].builds[0].steps[1].results = [2, None]
-    self.masters[0].builders[2].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[1].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[2].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[1].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[1].name,
                                 {'closing_steps': ['step1']})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[2].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[2].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)
             },
@@ -1824,7 +1824,7 @@ class GatekeeperTest(unittest.TestCase):
     since doing so would bump triggered_revisions on every build -- suppressing
     every legitimate failure in the process.
     """
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file,
                      '--track-revisions',
@@ -1836,18 +1836,18 @@ class GatekeeperTest(unittest.TestCase):
         ['revision', 72459, 'GatekeeperTest'],
         ['got_webkit_revision', 200, 'GatekeeperTest'],
     ]
-    self.masters[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds.append(new_build)
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.masters[0].builders[0].builds[1].steps[1].results = [2, None]
-    self.masters[0].builders[0].builds[1].finished = False
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[1].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[1].finished = False
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)
             },
@@ -1867,7 +1867,7 @@ class GatekeeperTest(unittest.TestCase):
 
   def testSequentialFailures(self):
     """Test that the status app is only hit once if many failures are seen."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
@@ -1875,14 +1875,14 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds.append(new_build)
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1', 'step2']})
 
-    self.masters[0].builders[0].builds[1].steps[2].results = [2, None]
+    self.mains[0].builders[0].builds[1].steps[2].results = [2, None]
 
     urls = self.call_gatekeeper()
     self.assertEquals(urls.count(self.set_status_url), 1)
@@ -1899,7 +1899,7 @@ class GatekeeperTest(unittest.TestCase):
 
   def testSequentialOneFailure(self):
     """Test that failing builds aren't mixed with good ones."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
@@ -1907,13 +1907,13 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds.append(new_build)
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    self.masters[0].builders[0].builds[1].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[1].steps[1].results = [2, None]
 
     urls = self.call_gatekeeper()
     self.assertEquals(urls.count(self.set_status_url), 1)
@@ -1927,11 +1927,11 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStarBuilder(self):
     """Test that * captures failures across all builders."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.add_gatekeeper_section(self.masters[0].url,
+    self.add_gatekeeper_section(self.mains[0].url,
                                 '*',
                                 {'closing_steps': ['step4']})
 
@@ -1944,18 +1944,18 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStarBuilderOverride(self):
     """Test that * can be explicitly overridden."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
     # step3 won't fail the build.
-    self.add_gatekeeper_section(self.masters[0].url,
+    self.add_gatekeeper_section(self.mains[0].url,
                                 '*',
                                 {'closing_steps': ['step3']})
 
     # But step4 will.
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step4']},
                                 idx=0)
 
@@ -1968,18 +1968,18 @@ class GatekeeperTest(unittest.TestCase):
 
   def testStarBuilderNoPropagate(self):
     """Test that * doesn't propagate to other builders."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
     # step4 will fail the build.
-    self.add_gatekeeper_section(self.masters[0].url,
+    self.add_gatekeeper_section(self.mains[0].url,
                                 '*',
                                 {'closing_steps': ['step4']})
 
     # But step3 won't.
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step3']},
                                 idx=0)
 
@@ -1989,14 +1989,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testMultiBuilderOneFailure(self):
     """Test that failure in one build doesn't affect another."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                      ])
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)},
             'mybuilder2': {
@@ -2005,15 +2005,15 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders.append(Builder('mybuilder2', [new_build]))
+    self.mains[0].builders.append(Builder('mybuilder2', [new_build]))
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    self.masters[0].builders[1].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[1].name,
+    self.mains[0].builders[1].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[1].name,
                                 {'closing_steps': ['step1']},
                                 idx=0)
 
@@ -2029,15 +2029,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testMultiBuilderFailures(self):
     """Test that failures on several builders are handled properly."""
-    master_url = 'http://build.chromium.org/p/chromium.fyi'
-    sys.argv.extend([master_url,
+    main_url = 'http://build.chromium.org/p/chromium.fyi'
+    sys.argv.extend([main_url,
                      '--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                      ])
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)},
             'mybuilder2': {
@@ -2046,16 +2046,16 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders.append(Builder('mybuilder2', [new_build]))
+    self.mains[0].builders.append(Builder('mybuilder2', [new_build]))
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    self.masters[0].builders[1].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[1].name,
+    self.mains[0].builders[1].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[1].name,
                                 {'closing_steps': ['step1']},
                                 idx=0)
 
@@ -2072,38 +2072,38 @@ class GatekeeperTest(unittest.TestCase):
     self.assertEquals(mailer_data['recipients'],
                       ['a_second_committer@chromium.org'])
 
-  def testMultiMaster(self):
-    """Test that multiple master failures are handled properly."""
-    self.masters.append(self.create_generic_build_tree('Chromium FYI 2',
+  def testMultiMain(self):
+    """Test that multiple main failures are handled properly."""
+    self.mains.append(self.create_generic_build_tree('Chromium FYI 2',
                                                        'chromium2.fyi'))
 
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                      ])
 
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)},
         },
-        self.masters[1].url: {
+        self.mains[1].url: {
             'mybuilder': {
                 0: build_scan_db.gen_build(finished=True)},
         },
     })
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    self.masters[1].builders[0].builds[0].blame = [
+    self.mains[1].builders[0].builds[0].blame = [
         'a_second_committer@chromium.org']
-    self.masters[1].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[1].url,
-                                self.masters[0].builders[0].name,
+    self.mains[1].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[1].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper(build_db)
@@ -2124,18 +2124,18 @@ class GatekeeperTest(unittest.TestCase):
 
   def testDontFailOmissionOnUncompletedBuild(self):
     """Don't fail a running build because of omitted steps."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps.append(
+    self.mains[0].builders[0].builds[0].steps.append(
         BuildStep('step4', [], isStarted=True, isFinished=True))
     mybuild = self.create_generic_build(2, ['a_second_committer@chromium.org'])
     mybuild.finished = False
-    self.masters[0].builders[0].builds.append(mybuild)
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds.append(mybuild)
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step4']})
 
     urls = self.call_gatekeeper()
@@ -2143,19 +2143,19 @@ class GatekeeperTest(unittest.TestCase):
 
   def testFailedBuildInProgress(self):
     """Test that a still-running build can close the tree."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status',
                      '--password-file', self.status_secret_file])
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
     mybuild = self.create_generic_build(2, ['a_second_committer@chromium.org'])
     mybuild.finished = False
     mybuild.steps[1].results = [2, None]
-    self.masters[0].builders[0].builds.append(mybuild)
+    self.mains[0].builders[0].builds.append(mybuild)
 
     urls = self.call_gatekeeper()
     self.assertIn(self.set_status_url, urls)
@@ -2168,28 +2168,28 @@ class GatekeeperTest(unittest.TestCase):
 
   def testUpdateBuildDBNotCompletedButFailed(self):
     """Test that partial builds increment the DB if they failed."""
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 1: build_scan_db.gen_build(finished=True)}}})
 
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
     mybuild = self.create_generic_build(2, ['a_second_committer@chromium.org'])
     mybuild.steps[1].results = [2, None]
     mybuild.finished = False
-    self.masters[0].builders[0].builds.append(mybuild)
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds.append(mybuild)
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper(build_db=build_db)
     unfinished_new_builds, finished_new_builds = self.process_build_db(
-        self.masters[0].url, 'mybuilder')
+        self.mains[0].url, 'mybuilder')
 
-    shas = self.get_gatekeeper_section_shas()[self.masters[0].url]
+    shas = self.get_gatekeeper_section_shas()[self.mains[0].url]
 
     self.assertEquals(finished_new_builds,
                       {1: build_scan_db.gen_build(finished=True)})
@@ -2201,26 +2201,26 @@ class GatekeeperTest(unittest.TestCase):
 
   def testDontUpdateBuildDBIfNotCompleted(self):
     """Test that partial builds aren't marked as finished."""
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 1: build_scan_db.gen_build(finished=True),
                 2: build_scan_db.gen_build()}}})
 
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
     mybuild = self.create_generic_build(2, ['a_second_committer@chromium.org'])
     mybuild.finished = False
-    self.masters[0].builders[0].builds.append(mybuild)
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds.append(mybuild)
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step4']})
 
     urls = self.call_gatekeeper(build_db=build_db)
     unfinished_new_builds, finished_new_builds = self.process_build_db(
-        self.masters[0].url, 'mybuilder')
+        self.mains[0].url, 'mybuilder')
 
     self.assertEquals(finished_new_builds,
                       {1: build_scan_db.gen_build(finished=True)})
@@ -2230,22 +2230,22 @@ class GatekeeperTest(unittest.TestCase):
 
   def testTriggeringDoesntTriggerOnSameBuild(self):
     """Test that a section won't fire twice on a build."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.masters[0].builders[0].builds[0].finished = False
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].finished = False
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper()
     build_db = build_scan_db.get_build_db(self.build_db_file)
     urls += self.call_gatekeeper(build_db=build_db)
     unfinished_new_builds, finished_new_builds = self.process_build_db(
-        self.masters[0].url, 'mybuilder')
-    shas = self.get_gatekeeper_section_shas()[self.masters[0].url]
+        self.mains[0].url, 'mybuilder')
+    shas = self.get_gatekeeper_section_shas()[self.mains[0].url]
     self.assertEquals(finished_new_builds,
                       {0: build_scan_db.gen_build(finished=True)})
     self.assertEquals(unfinished_new_builds,
@@ -2255,33 +2255,33 @@ class GatekeeperTest(unittest.TestCase):
 
   def testTriggeringOneHashDoesntStopAnother(self):
     """Test that firing on one hash doesn't prevent another hash triggering."""
-    build_db = build_scan_db.gen_db(masters={
-        self.masters[0].url: {
+    build_db = build_scan_db.gen_db(mains={
+        self.mains[0].url: {
             'mybuilder': {
                 1: build_scan_db.gen_build(finished=True)}}})
 
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
     mybuild = self.create_generic_build(2, ['a_second_committer@chromium.org'])
     mybuild.finished = False
-    self.masters[0].builders[0].builds.append(mybuild)
-    self.masters[0].builders[0].builds[1].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds.append(mybuild)
+    self.mains[0].builders[0].builds[1].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper(build_db=build_db)
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step2']})
-    self.masters[0].builders[0].builds[1].steps[2].results = [2, None]
+    self.mains[0].builders[0].builds[1].steps[2].results = [2, None]
     build_db = build_scan_db.get_build_db(self.build_db_file)
     urls += self.call_gatekeeper(build_db=build_db)
     unfinished_new_builds, finished_new_builds = self.process_build_db(
-        self.masters[0].url, 'mybuilder')
-    shas = self.get_gatekeeper_section_shas()[self.masters[0].url]
+        self.mains[0].url, 'mybuilder')
+    shas = self.get_gatekeeper_section_shas()[self.mains[0].url]
     self.assertEquals(finished_new_builds,
                       {1: build_scan_db.gen_build(finished=True)})
     self.assertEquals(unfinished_new_builds,
@@ -2292,14 +2292,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testTriggerIsRemovedIfNoFailure(self):
     """Test that build_db triggers aren't present if a step hasn't failed."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                     ])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper()
@@ -2307,26 +2307,26 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds.append(new_build)
     build_db = build_scan_db.get_build_db(self.build_db_file)
     urls += self.call_gatekeeper(build_db=build_db)
     self.assertEquals(urls.count(self.set_status_url), 1)
     _, finished_new_builds = self.process_build_db(
-        self.masters[0].url, 'mybuilder')
+        self.mains[0].url, 'mybuilder')
     self.assertEquals(finished_new_builds,
                       {2: build_scan_db.gen_build(
                         finished=True, succeeded=True)})
 
   def testOnlyFireOnNewFailures(self):
     """Test that the tree isn't closed if only an old test failed."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                     ])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper()
@@ -2334,8 +2334,8 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
-    self.masters[0].builders[0].builds[1].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds[1].steps[1].results = [2, None]
 
     build_db = build_scan_db.get_build_db(self.build_db_file)
     urls += self.call_gatekeeper(build_db=build_db)
@@ -2343,15 +2343,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testTriggerDoesntPersistOldFailures(self):
     """Test that gatekeeper doesn't persist old failing tests."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                     ])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.masters[0].builders[0].builds[0].steps[2].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[2].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1', 'step2']})
 
     urls = self.call_gatekeeper()
@@ -2359,16 +2359,16 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
-    self.masters[0].builders[0].builds[1].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds[1].steps[1].results = [2, None]
 
     build_db = build_scan_db.get_build_db(self.build_db_file)
     urls += self.call_gatekeeper(build_db=build_db)
     self.assertEquals(urls.count(self.set_status_url), 1)
 
     unfinished_new_builds, finished_new_builds = self.process_build_db(
-        self.masters[0].url, 'mybuilder')
-    shas = self.get_gatekeeper_section_shas()[self.masters[0].url]
+        self.mains[0].url, 'mybuilder')
+    shas = self.get_gatekeeper_section_shas()[self.mains[0].url]
     self.assertEquals(finished_new_builds,
                       {2: build_scan_db.gen_build(finished=True, triggered={
                           shas[0]: ['step1'],
@@ -2377,14 +2377,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testFireOnNewAndOldTests(self):
     """Test that build_db triggers when new steps go green and red."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                     ])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1', 'step2']})
 
     urls = self.call_gatekeeper()
@@ -2392,16 +2392,16 @@ class GatekeeperTest(unittest.TestCase):
 
     new_build = self.create_generic_build(
         2, ['a_second_committer@chromium.org'])
-    self.masters[0].builders[0].builds.append(new_build)
+    self.mains[0].builders[0].builds.append(new_build)
 
-    self.masters[0].builders[0].builds[1].steps[2].results = [2, None]
+    self.mains[0].builders[0].builds[1].steps[2].results = [2, None]
 
     build_db = build_scan_db.get_build_db(self.build_db_file)
     urls += self.call_gatekeeper(build_db=build_db)
     self.assertEquals(urls.count(self.set_status_url), 2)
     unfinished_new_builds, finished_new_builds = self.process_build_db(
-        self.masters[0].url, 'mybuilder')
-    shas = self.get_gatekeeper_section_shas()[self.masters[0].url]
+        self.mains[0].url, 'mybuilder')
+    shas = self.get_gatekeeper_section_shas()[self.mains[0].url]
     self.assertEquals(finished_new_builds,
                       {2: build_scan_db.gen_build(finished=True, triggered={
                           shas[0]: [u'step2']})})
@@ -2409,29 +2409,29 @@ class GatekeeperTest(unittest.TestCase):
 
   def testRecordsAllFailuresInBuild(self):
     """Test that all failures are recorded, even after initial trigger."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--email-app-secret-file=%s' % self.email_secret_file,
                      '--set-status', '--password-file', self.status_secret_file
                     ])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1', 'step2']})
 
-    self.masters[0].builders[0].builds[0].finished = False
+    self.mains[0].builders[0].builds[0].finished = False
 
     urls = self.call_gatekeeper()
     self.assertEquals(urls.count(self.set_status_url), 1)
 
-    self.masters[0].builders[0].builds[0].steps[2].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[2].results = [2, None]
 
     build_db = build_scan_db.get_build_db(self.build_db_file)
     urls += self.call_gatekeeper(build_db=build_db)
     self.assertEquals(urls.count(self.set_status_url), 1)
     unfinished_new_builds, _ = self.process_build_db(
-        self.masters[0].url, 'mybuilder')
-    shas = self.get_gatekeeper_section_shas()[self.masters[0].url]
+        self.mains[0].url, 'mybuilder')
+    shas = self.get_gatekeeper_section_shas()[self.mains[0].url]
     self.assertEquals(unfinished_new_builds,
                       {1: build_scan_db.gen_build(triggered={
                           shas[0]: [
@@ -2441,14 +2441,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testInheritFromCategory(self):
     """Check that steps in categories are inherited by builders."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
     self.add_gatekeeper_category('mycat', {'closing_steps': ['step1']})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'categories': ['mycat']})
 
     self.call_gatekeeper()
@@ -2461,15 +2461,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testMultiCategory(self):
     """Check that steps in categories are inherited by builders."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[2].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[2].results = [2, None]
     self.add_gatekeeper_category('mycat', {'closing_steps': ['step1']})
     self.add_gatekeeper_category('mycat2', {'closing_steps': ['step2']})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'categories': ['mycat', 'mycat2']})
 
     self.call_gatekeeper()
@@ -2482,14 +2482,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testAddonCategory(self):
     """Check that builders can add-on to categories."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
     self.add_gatekeeper_category('mycat', {'closing_steps': ['step2']})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'categories': ['mycat'],
                                  'closing_steps': ['step1']})
 
@@ -2501,17 +2501,17 @@ class GatekeeperTest(unittest.TestCase):
         self.url_calls[-1]['params'])
     self.assertEquals(mailer_data['recipients'], ['a_committer@chromium.org'])
 
-  def testInheritFromMaster(self):
-    """Check that steps in masters are inherited by builders."""
-    sys.argv.extend([m.url for m in self.masters])
+  def testInheritFromMain(self):
+    """Check that steps in mains are inherited by builders."""
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_master_config(self.masters[0].url,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_main_config(self.mains[0].url,
                                       {'sheriff_classes': ['sheriff_android']})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']},
                                 idx=0)
 
@@ -2533,17 +2533,17 @@ class GatekeeperTest(unittest.TestCase):
                        'anothersheriff@google.com',
                        'asheriff@google.com'])
 
-  def testAddonToMaster(self):
-    """Check that steps in masters can be added by builders."""
-    sys.argv.extend([m.url for m in self.masters])
+  def testAddonToMain(self):
+    """Check that steps in mains can be added by builders."""
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_master_config(self.masters[0].url,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_main_config(self.mains[0].url,
                                       {'sheriff_classes': ['sheriff_android']})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'sheriff_classes': ['sheriff']},
                                 idx=0)
@@ -2573,18 +2573,18 @@ class GatekeeperTest(unittest.TestCase):
                        'asheriff2@google.com',
                        'asheriff@google.com'])
 
-  def testInheritCategoryFromMaster(self):
-    """Check that steps can inherit categories from masters."""
-    sys.argv.extend([m.url for m in self.masters])
+  def testInheritCategoryFromMain(self):
+    """Check that steps can inherit categories from mains."""
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
     self.add_gatekeeper_category('mycat', {'closing_steps': ['step1']})
-    self.add_gatekeeper_master_config(self.masters[0].url,
+    self.add_gatekeeper_main_config(self.mains[0].url,
                                       {'categories': ['mycat']})
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {},
                                 idx=0)
 
@@ -2596,24 +2596,24 @@ class GatekeeperTest(unittest.TestCase):
         self.url_calls[-1]['params'])
     self.assertEquals(mailer_data['recipients'], ['a_committer@chromium.org'])
 
-  def testMasterSections(self):
-    """Check that master sections work correctly."""
-    sys.argv.extend([m.url for m in self.masters])
+  def testMainSections(self):
+    """Check that main sections work correctly."""
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
     self.add_gatekeeper_category('mycat', {'closing_steps': ['step1']})
-    self.add_gatekeeper_master_config(self.masters[0].url,
+    self.add_gatekeeper_main_config(self.mains[0].url,
                                       {}
                                       )
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {},
                                 idx=0)
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'categories': ['mycat']})
 
     self.call_gatekeeper()
@@ -2624,25 +2624,25 @@ class GatekeeperTest(unittest.TestCase):
         self.url_calls[-1]['params'])
     self.assertEquals(mailer_data['recipients'], ['a_committer@chromium.org'])
 
-  def testMasterSectionEmails(self):
-    """Check that master section handles email properly."""
-    sys.argv.extend([m.url for m in self.masters])
+  def testMainSectionEmails(self):
+    """Check that main section handles email properly."""
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
     self.add_gatekeeper_category('mycat', {'closing_steps': ['step1']})
-    self.add_gatekeeper_master_config(self.masters[0].url,
+    self.add_gatekeeper_main_config(self.mains[0].url,
                                       {}
                                       )
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1'],
                                  'tree_notify': ['a_watcher@chromium.org']},
                                 idx=0)
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'categories': ['mycat']})
 
     self.call_gatekeeper()
@@ -2656,14 +2656,14 @@ class GatekeeperTest(unittest.TestCase):
 
   def testEmailFilter(self):
     """Test that no email is sent if the email isn't in the domain filter."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--filter-domain=squirrels.net,squirrels.com'])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     urls = self.call_gatekeeper()
@@ -2671,15 +2671,15 @@ class GatekeeperTest(unittest.TestCase):
 
   def testDisableEmailFilter(self):
     """Test that no email is sent if the email isn't in the domain filter."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--email-app-secret-file=%s' % self.email_secret_file,
                      '--disable-domain-filter',
                      '--filter-domain=squirrels.net,squirrels.com'])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
     self.call_gatekeeper()
@@ -2690,10 +2690,10 @@ class GatekeeperTest(unittest.TestCase):
         self.url_calls[-1]['params'])
     self.assertEquals(mailer_data['recipients'], ['a_committer@chromium.org'])
 
-  def testMasterNotConfigured(self):
-    """Check that gatekeeper fails if a master isn't in config json."""
+  def testMainNotConfigured(self):
+    """Check that gatekeeper fails if a main isn't in config json."""
 
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app'])
     with self.assertRaises(ValueError):
@@ -2701,17 +2701,17 @@ class GatekeeperTest(unittest.TestCase):
 
   def testSectionWillNotCloseTree(self):
     """Test that close_tree=False sections don't call to the status app."""
-    sys.argv.extend([m.url for m in self.masters])
+    sys.argv.extend([m.url for m in self.mains])
     sys.argv.extend(['--skip-build-db-update',
                      '--no-email-app', '--set-status',
                      '--password-file', self.status_secret_file])
 
-    self.masters[0].builders[0].builds[0].steps[1].results = [2, None]
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.mains[0].builders[0].builds[0].steps[1].results = [2, None]
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'closing_steps': ['step1']})
 
-    self.add_gatekeeper_master_section(self.masters[0].url, -1,
+    self.add_gatekeeper_main_section(self.mains[0].url, -1,
                                        {'close_tree': False})
 
     urls = self.call_gatekeeper()
@@ -2720,8 +2720,8 @@ class GatekeeperTest(unittest.TestCase):
   def testInvalidConfigIsCaught(self):
     sys.argv.extend(['--verify'])
 
-    self.add_gatekeeper_section(self.masters[0].url,
-                                self.masters[0].builders[0].name,
+    self.add_gatekeeper_section(self.mains[0].url,
+                                self.mains[0].builders[0].name,
                                 {'squirrels': ['yay']})
     with self.assertRaises(AssertionError):
       self.call_gatekeeper()

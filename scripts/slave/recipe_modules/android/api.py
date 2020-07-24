@@ -4,7 +4,7 @@
 
 """Common steps for recipes that sync/build Android sources."""
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 class AOSPApi(recipe_api.RecipeApi):
   def __init__(self, **kwargs):
@@ -13,7 +13,7 @@ class AOSPApi(recipe_api.RecipeApi):
 
   @property
   def with_lunch_command(self):
-    return [self.m.path['build'].join('scripts', 'slave',
+    return [self.m.path['build'].join('scripts', 'subordinate',
                                       'android', 'with_lunch'),
             self.c.build_path,
             self.c.lunch_flavor]
@@ -57,8 +57,8 @@ class AOSPApi(recipe_api.RecipeApi):
     # The copy of repo from depot_tools is only used to bootstrap the Android
     # tree checkout.
     repo_in_android_path = self.c.build_path.join('.repo', 'repo', 'repo')
-    repo_copy_dir = self.m.path['slave_build'].join('repo_copy')
-    repo_copy_path = self.m.path['slave_build'].join('repo_copy', 'repo')
+    repo_copy_dir = self.m.path['subordinate_build'].join('repo_copy')
+    repo_copy_path = self.m.path['subordinate_build'].join('repo_copy', 'repo')
     if self.m.path.exists(repo_in_android_path):
       self.m.path.makedirs('repo copy dir', repo_copy_dir)
       self.m.step('copy repo from Android', [
@@ -92,7 +92,7 @@ class AOSPApi(recipe_api.RecipeApi):
 
     blacklist = result.json.output['blacklist']
     chrome_checkout = str(self.m.path['checkout'])
-    android_chrome_checkout = self.c.slave_chromium_in_android_path
+    android_chrome_checkout = self.c.subordinate_chromium_in_android_path
 
     # rsync expects the from path to end in a / otherwise it copies
     # the source folder into the destination folder instead of over
@@ -118,15 +118,15 @@ class AOSPApi(recipe_api.RecipeApi):
     self.m.step('rsync chromium_org', command)
 
   def gyp_webview_step(self):
-    gyp_webview_path = self.c.slave_chromium_in_android_path.join(
+    gyp_webview_path = self.c.subordinate_chromium_in_android_path.join(
         'android_webview', 'tools', 'gyp_webview')
     self.m.step(
         'gyp_webview',
         self.with_lunch_command + [gyp_webview_path, 'all'],
-        cwd=self.c.slave_chromium_in_android_path)
+        cwd=self.c.subordinate_chromium_in_android_path)
 
   def all_incompatible_directories_check_step(self):
-    webview_license_tool_path = self.c.slave_chromium_in_android_path.join(
+    webview_license_tool_path = self.c.subordinate_chromium_in_android_path.join(
         'android_webview', 'tools', 'webview_licenses.py')
     self.m.python('incompatible directories', webview_license_tool_path,
                         ['all_incompatible_directories'])
@@ -135,7 +135,7 @@ class AOSPApi(recipe_api.RecipeApi):
                    use_goma=True, src_dir=None, target_out_dir=None,
                    envsetup=None, defines=None, env=None, force_clobber=False):
     src_dir = src_dir or self.c.build_path
-    target_out_dir = target_out_dir or self.c.slave_android_out_path
+    target_out_dir = target_out_dir or self.c.subordinate_android_out_path
     envsetup = envsetup or self.with_lunch_command
     targets = targets or []
     env = env or {}
@@ -144,7 +144,7 @@ class AOSPApi(recipe_api.RecipeApi):
       targets.insert(0, defines_str)
 
     compiler_option = []
-    compile_script = [self.m.path['build'].join('scripts', 'slave',
+    compile_script = [self.m.path['build'].join('scripts', 'subordinate',
                                                 'compile.py')]
     if use_goma and self.m.path.exists(self.m.path['build'].join('goma')):
       compiler_option = ['--compiler', 'goma',
@@ -157,12 +157,12 @@ class AOSPApi(recipe_api.RecipeApi):
                       envsetup +
                       compile_script +
                       targets +
-                      ['--build-dir', self.m.path['slave_build']] +
+                      ['--build-dir', self.m.path['subordinate_build']] +
                       ['--src-dir', src_dir] +
                       ['--build-tool', build_tool] +
                       ['--verbose'] +
                       compiler_option,
-                      cwd=self.m.path['slave_build'],
+                      cwd=self.m.path['subordinate_build'],
                       env=env)
 
   def update_defaut_props_step(self, extra_properties):

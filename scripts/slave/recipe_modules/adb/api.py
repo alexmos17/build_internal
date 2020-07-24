@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 class AdbApi(recipe_api.RecipeApi):
   def __init__(self, **kwargs):
@@ -17,7 +17,7 @@ class AdbApi(recipe_api.RecipeApi):
     return self.m.step(cmd=cmd_prefix + cmd, **kwargs)
 
   def _adb_path(self):
-    return str(self.m.path['build_internal'].join('scripts', 'slave',
+    return str(self.m.path['build_internal'].join('scripts', 'subordinate',
                                                   'android', 'adb'))
 
   def list_devices(self, **kwargs):

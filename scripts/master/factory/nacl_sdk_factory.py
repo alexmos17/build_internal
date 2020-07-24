@@ -8,20 +8,20 @@ Based on gclient_factory.py."""
 
 import posixpath
 
-from master.factory import gclient_factory
-from master.factory import nacl_sdk_commands
+from main.factory import gclient_factory
+from main.factory import nacl_sdk_commands
 
 import config
 
 
 class NativeClientSDKFactory(gclient_factory.GClientFactory):
-  """Encapsulates data and methods common to the nacl.sdk master.cfg files."""
+  """Encapsulates data and methods common to the nacl.sdk main.cfg files."""
 
-  DEFAULT_TARGET_PLATFORM = config.Master.default_platform
-  CUSTOM_VARS_GOOGLECODE_URL = ('googlecode_url', config.Master.googlecode_url)
+  DEFAULT_TARGET_PLATFORM = config.Main.default_platform
+  CUSTOM_VARS_GOOGLECODE_URL = ('googlecode_url', config.Main.googlecode_url)
   CUSTOM_VARS_SOURCEFORGE_URL = ('sourceforge_url',
-                                 config.Master.sourceforge_url)
-  CUSTOM_VARS_WEBKIT_MIRROR = ('webkit_trunk', config.Master.webkit_trunk_url)
+                                 config.Main.sourceforge_url)
+  CUSTOM_VARS_WEBKIT_MIRROR = ('webkit_trunk', config.Main.webkit_trunk_url)
 
   # A map used to skip dependencies when a test is not run.
   # The map key is the test name. The map value is an array containing the
@@ -36,7 +36,7 @@ class NativeClientSDKFactory(gclient_factory.GClientFactory):
                alternate_url=None, branch='trunk'):
     solutions = []
     self.target_platform = target_platform
-    nacl_sdk_url = posixpath.join(config.Master.nacl_sdk_root_url,
+    nacl_sdk_url = posixpath.join(config.Main.nacl_sdk_root_url,
                                   branch, 'src')
     if alternate_url:
       nacl_sdk_url = alternate_url
@@ -55,7 +55,7 @@ class NativeClientSDKFactory(gclient_factory.GClientFactory):
 
 
   def NativeClientSDKFactory(self, target='Release', clobber=False, tests=None,
-                             mode=None, slave_type='BuilderTester',
+                             mode=None, subordinate_type='BuilderTester',
                              options=None, compile_timeout=1200, build_url=None,
                              factory_properties=None, official_release=True):
     factory_properties = factory_properties or {}

@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 """
-Site configuration information that is sufficient to configure a slave,
+Site configuration information that is sufficient to configure a subordinate,
 without loading any buildbot or twisted code.
 """
 
@@ -18,24 +18,24 @@ except ImportError:
   import config_default as config_private # pylint: disable=W0403
 
 
-class Master(config_private.Master):
-  """Buildbot master configuration options."""
+class Main(config_private.Main):
+  """Buildbot main configuration options."""
 
-  trunk_url = (config_private.Master.server_url +
-               config_private.Master.repo_root + '/trunk')
+  trunk_url = (config_private.Main.server_url +
+               config_private.Main.repo_root + '/trunk')
 
-  webkit_trunk_url = (config_private.Master.webkit_root_url + '/trunk')
+  webkit_trunk_url = (config_private.Main.webkit_root_url + '/trunk')
 
-  trunk_url_src = config_private.Master.git_server_url + '/chromium/src.git'
+  trunk_url_src = config_private.Main.git_server_url + '/chromium/src.git'
   trunk_url_tools = trunk_url + '/tools'
-  nacl_url = config_private.Master.nacl_trunk_url + '/src/native_client'
+  nacl_url = config_private.Main.nacl_trunk_url + '/src/native_client'
   nacl_sdk_root_url = 'https://nativeclient-sdk.googlecode.com/svn'
   nacl_ports_trunk_url = 'https://naclports.googlecode.com/svn/trunk'
   nacl_ports_url = nacl_ports_trunk_url + '/src'
   gears_url = 'http://gears.googlecode.com/svn/trunk'
   gyp_trunk_url = 'http://gyp.googlecode.com/svn/trunk'
-  branch_url = (config_private.Master.server_url +
-                config_private.Master.repo_root + '/branches')
+  branch_url = (config_private.Main.server_url +
+                config_private.Main.repo_root + '/branches')
   merge_branch_url = branch_url + '/chrome_webkit_merge_branch'
   merge_branch_url_src = merge_branch_url + '/src'
 
@@ -46,17 +46,17 @@ class Master(config_private.Master):
   es5conform_root_url =  "https://es5conform.svn.codeplex.com/svn/"
   es5conform_revision = 62998
 
-  dart_url = config_private.Master.googlecode_url % 'dart'
+  dart_url = config_private.Main.googlecode_url % 'dart'
   dart_bleeding = dart_url + '/branches/bleeding_edge'
   dart_trunk = dart_url + '/trunk'
 
-  oilpan_url = (config_private.Master.webkit_root_url + '/branches/oilpan')
+  oilpan_url = (config_private.Main.webkit_root_url + '/branches/oilpan')
 
   skia_url = 'http://skia.googlecode.com/svn/'
 
   syzygy_url = 'http://sawbuck.googlecode.com/svn/'
 
-  webrtc_url = config_private.Master.googlecode_url % 'webrtc'
+  webrtc_url = config_private.Main.googlecode_url % 'webrtc'
   libyuv_url = 'http://libyuv.googlecode.com/svn'
 
   # Default target platform if none was given to the factory.
@@ -88,9 +88,9 @@ class Master(config_private.Master):
 
   @staticmethod
   def GetBotPassword():
-    """Returns the slave password retrieved from a local file, or None.
+    """Returns the subordinate password retrieved from a local file, or None.
 
-    The slave password is loaded from a local file next to this module file, if
+    The subordinate password is loaded from a local file next to this module file, if
     it exists.  This is a function rather than a variable so it's not called
     when it's not needed.
 
@@ -98,9 +98,9 @@ class Master(config_private.Master):
     <metaclass, which is overkill for this usage.
     """
     # Note: could be overriden by config_private.
-    if not getattr(Master, 'bot_password', None):
+    if not getattr(Main, 'bot_password', None):
       # If the bot_password has been requested, the file is required to exist
       # if not overriden in config_private.
       bot_password_path = os.path.join(BASE_DIR, '.bot_password')
-      Master.bot_password = open(bot_password_path).read().strip('\n\r')
-    return Master.bot_password
+      Main.bot_password = open(bot_password_path).read().strip('\n\r')
+    return Main.bot_password

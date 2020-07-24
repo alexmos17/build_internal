@@ -5,7 +5,7 @@
 import os
 import urllib
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 class AndroidApi(recipe_api.RecipeApi):
   def __init__(self, **kwargs):
@@ -85,7 +85,7 @@ class AndroidApi(recipe_api.RecipeApi):
     self.m.python(
       step_name,
       str(self.m.path['build'].join(
-          'scripts', 'slave', 'android', 'archive_build.py')),
+          'scripts', 'subordinate', 'android', 'archive_build.py')),
       archive_args,
       infra_step=True,
       **kwargs
@@ -114,7 +114,7 @@ class AndroidApi(recipe_api.RecipeApi):
     # TODO(sivachandra): Manufacture gclient spec such that it contains "src"
     # solution + repo_name solution. Then checkout will be automatically
     # correctly set by gclient.checkout
-    self.m.path['checkout'] = self.m.path['slave_build'].join('src')
+    self.m.path['checkout'] = self.m.path['subordinate_build'].join('src')
 
     self.clean_local_files()
 
@@ -169,7 +169,7 @@ class AndroidApi(recipe_api.RecipeApi):
     # (maybe a 'tryserver' module) at some point.
     self.m.step(
         'apply_patch',
-        [self.m.path['build'].join('scripts', 'slave', 'apply_svn_patch.py'),
+        [self.m.path['build'].join('scripts', 'subordinate', 'apply_svn_patch.py'),
          '-p', self.m.properties['patch_url'],
          '-r', self.internal_dir])
 
@@ -252,7 +252,7 @@ class AndroidApi(recipe_api.RecipeApi):
   def spawn_logcat_monitor(self):
     self.m.step(
         'spawn_logcat_monitor',
-        [self.m.path['build'].join('scripts', 'slave', 'daemonizer.py'),
+        [self.m.path['build'].join('scripts', 'subordinate', 'daemonizer.py'),
          '--', self.c.cr_build_android.join('adb_logcat_monitor.py'),
          self.m.chromium.c.build_dir.join('logcat')],
         env=self.get_env(),
@@ -280,7 +280,7 @@ class AndroidApi(recipe_api.RecipeApi):
     except self.m.step.InfraFailure as f:
       params = {
         'summary': ('Device Offline on %s %s' %
-          (self.m.properties['mastername'], self.m.properties['slavename'])),
+          (self.m.properties['mainname'], self.m.properties['subordinatename'])),
         'comment': ('Buildbot: %s\n(Please do not change any labels)' %
           self.m.properties['buildername']),
         'labels': 'Restrict-View-Google,OS-Android,Infra,Infra-Labs',
@@ -461,7 +461,7 @@ class AndroidApi(recipe_api.RecipeApi):
     else:
       self.m.python(
           'logcat_dump',
-          self.m.path['build'].join('scripts', 'slave', 'tee.py'),
+          self.m.path['build'].join('scripts', 'subordinate', 'tee.py'),
           [self.m.chromium.output_dir.join('full_log'),
            '--',
            self.m.path['checkout'].join('build', 'android',
@@ -528,7 +528,7 @@ class AndroidApi(recipe_api.RecipeApi):
     self.m.step('prepare bisect perf regression',
         [self.m.path['checkout'].join('tools',
                                       'prepare-bisect-perf-regression.py'),
-         '-w', self.m.path['slave_build']])
+         '-w', self.m.path['subordinate_build']])
 
     args = []
     if extra_src:
@@ -538,7 +538,7 @@ class AndroidApi(recipe_api.RecipeApi):
     self.m.step('run bisect perf regression',
         [self.m.path['checkout'].join('tools',
                                       'run-bisect-perf-regression.py'),
-         '-w', self.m.path['slave_build']] + args)
+         '-w', self.m.path['subordinate_build']] + args)
 
   def run_test_suite(self, suite, verbose=True, isolate_file_path=None,
                      gtest_filter=None, tool=None, **kwargs):

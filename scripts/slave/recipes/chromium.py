@@ -19,15 +19,15 @@ DEPS = [
 
 
 def GenSteps(api):
-  mastername = api.properties.get('mastername')
+  mainname = api.properties.get('mainname')
   buildername = api.properties.get('buildername')
 
-  update_step, master_dict, test_spec = \
-      api.chromium_tests.sync_and_configure_build(mastername, buildername)
-  api.chromium_tests.compile(mastername, buildername, update_step, master_dict,
+  update_step, main_dict, test_spec = \
+      api.chromium_tests.sync_and_configure_build(mainname, buildername)
+  api.chromium_tests.compile(mainname, buildername, update_step, main_dict,
                              test_spec)
   tests = api.chromium_tests.tests_for_builder(
-      mastername, buildername, update_step, master_dict)
+      mainname, buildername, update_step, main_dict)
 
   if not tests:
     return
@@ -68,19 +68,19 @@ def _sanitize_nonalpha(text):
 
 
 def GenTests(api):
-  for mastername, master_config in api.chromium.builders.iteritems():
-    for buildername, bot_config in master_config['builders'].iteritems():
+  for mainname, main_config in api.chromium.builders.iteritems():
+    for buildername, bot_config in main_config['builders'].iteritems():
       bot_type = bot_config.get('bot_type', 'builder_tester')
 
       if bot_type in ['builder', 'builder_tester']:
         assert bot_config.get('parent_buildername') is None, (
-            'Unexpected parent_buildername for builder %r on master %r.' %
-                (buildername, mastername))
+            'Unexpected parent_buildername for builder %r on main %r.' %
+                (buildername, mainname))
 
       test = (
-        api.test('full_%s_%s' % (_sanitize_nonalpha(mastername),
+        api.test('full_%s_%s' % (_sanitize_nonalpha(mainname),
                                  _sanitize_nonalpha(buildername))) +
-        api.properties.generic(mastername=mastername,
+        api.properties.generic(mainname=mainname,
                                buildername=buildername,
                                parent_buildername=bot_config.get(
                                    'parent_buildername')) +
@@ -96,14 +96,14 @@ def GenTests(api):
       if bot_type in ['builder', 'builder_tester']:
         test += api.step_data('checkdeps', api.json.output([]))
 
-      if mastername == 'client.v8':
+      if mainname == 'client.v8':
         test += api.properties(revision='22135')
 
       yield test
 
   yield (
     api.test('dynamic_gtest') +
-    api.properties.generic(mastername='chromium.linux',
+    api.properties.generic(mainname='chromium.linux',
                            buildername='Linux Tests',
                            parent_buildername='Linux Builder') +
     api.platform('linux', 64) +
@@ -119,7 +119,7 @@ def GenTests(api):
 
   yield (
     api.test('dynamic_swarmed_gtest') +
-    api.properties.generic(mastername='chromium.linux',
+    api.properties.generic(mainname='chromium.linux',
                            buildername='Linux Builder') +
     api.platform('linux', 64) +
     api.override_step_data('read test spec', api.json.output({
@@ -134,7 +134,7 @@ def GenTests(api):
 
   yield (
     api.test('dynamic_gtest_on_builder') +
-    api.properties.generic(mastername='chromium.linux',
+    api.properties.generic(mainname='chromium.linux',
                            buildername='Linux Builder') +
     api.platform('linux', 64) +
     api.override_step_data('read test spec', api.json.output({
@@ -149,7 +149,7 @@ def GenTests(api):
 
   yield (
     api.test('dynamic_gtest_win') +
-    api.properties.generic(mastername='chromium.win',
+    api.properties.generic(mainname='chromium.win',
                            buildername='Win7 Tests (1)',
                            parent_buildername='Win Builder') +
     api.platform('win', 64) +
@@ -166,7 +166,7 @@ def GenTests(api):
   # Tests switching on asan and swiching off lsan for sandbox tester.
   yield (
     api.test('dynamic_gtest_memory') +
-    api.properties.generic(mastername='chromium.memory',
+    api.properties.generic(mainname='chromium.memory',
                            buildername='Linux ASan Tests (sandboxed)',
                            parent_buildername='Linux ASan LSan Builder') +
     api.platform('linux', 64) +
@@ -182,7 +182,7 @@ def GenTests(api):
   # Tests that the memory builder is using the correct compile targets.
   yield (
     api.test('dynamic_gtest_memory_builder') +
-    api.properties.generic(mastername='chromium.memory',
+    api.properties.generic(mainname='chromium.memory',
                            buildername='Linux ASan LSan Builder',
                            revision='123456') +
     api.platform('linux', 64) +
@@ -199,7 +199,7 @@ def GenTests(api):
 
   yield (
     api.test('arm') +
-    api.properties.generic(mastername='chromium.fyi',
+    api.properties.generic(mainname='chromium.fyi',
                            buildername='Linux ARM Cross-Compile') +
     api.platform('linux', 64) +
     api.override_step_data('read test spec', api.json.output({
@@ -217,7 +217,7 @@ def GenTests(api):
 
   yield (
     api.test('findbugs_failure') +
-    api.properties.generic(mastername='chromium.linux',
+    api.properties.generic(mainname='chromium.linux',
                            buildername='Android Builder (dbg)') +
     api.platform('linux', 32) +
     api.step_data('findbugs', retcode=1)
@@ -225,7 +225,7 @@ def GenTests(api):
 
   yield (
     api.test('msan') +
-    api.properties.generic(mastername='chromium.memory.fyi',
+    api.properties.generic(mainname='chromium.memory.fyi',
                            buildername='Linux MSan Tests',
                            parent_buildername='Chromium Linux MSan Builder') +
     api.platform('linux', 64) +
@@ -239,7 +239,7 @@ def GenTests(api):
 
   yield (
     api.test('buildnumber_zero') +
-    api.properties.generic(mastername='chromium.linux',
+    api.properties.generic(mainname='chromium.linux',
                            buildername='Linux Tests',
                            parent_buildername='Linux Builder',
                            buildnumber=0) +
@@ -257,7 +257,7 @@ def GenTests(api):
   # FIXME(iannucci): Make this test work.
   #yield (
   #  api.test('one_failure_keeps_going') +
-  #  api.properties.generic(mastername='chromium.linux',
+  #  api.properties.generic(mainname='chromium.linux',
   #                         buildername='Linux Tests',
   #                         parent_buildername='Linux Builder') +
   #  api.platform('linux', 64) +
@@ -266,7 +266,7 @@ def GenTests(api):
 
   yield (
     api.test('one_failure_keeps_going_dynamic_tests') +
-    api.properties.generic(mastername='chromium.linux',
+    api.properties.generic(mainname='chromium.linux',
                            buildername='Linux Tests',
                            parent_buildername='Linux Builder') +
     api.platform('linux', 64) +
@@ -283,7 +283,7 @@ def GenTests(api):
 
   yield (
     api.test('ios_gfx_unittests_failure') +
-    api.properties.generic(mastername='chromium.mac',
+    api.properties.generic(mainname='chromium.mac',
                            buildername='iOS Simulator (dbg)') +
     api.platform('mac', 32) +
     api.override_step_data(
@@ -292,7 +292,7 @@ def GenTests(api):
 
   yield (
     api.test('archive_dependencies_failure') +
-    api.properties.generic(mastername='chromium.linux',
+    api.properties.generic(mainname='chromium.linux',
                            buildername='Linux Builder',
                            buildnumber=0) +
     api.platform('linux', 64) +
@@ -302,7 +302,7 @@ def GenTests(api):
 
   yield (
     api.test('generate_telemetry_profile_failure') +
-    api.properties.generic(mastername='chromium.perf',
+    api.properties.generic(mainname='chromium.perf',
                            buildername='Linux Perf (1)',
                            parent_buildername='Linux Builder',
                            buildnumber=0) +
@@ -313,7 +313,7 @@ def GenTests(api):
 
   yield (
     api.test('perf_test_profile_failure') +
-    api.properties.generic(mastername='chromium.perf',
+    api.properties.generic(mainname='chromium.perf',
                            buildername='Linux Perf (1)',
                            parent_buildername='Linux Builder',
                            buildnumber=0) +

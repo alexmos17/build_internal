@@ -30,7 +30,7 @@ def GenSteps(api):
   # If the sync fails, we nuke the build dir.
   v8.checkout(
       may_nuke=(api.tryserver.is_tryserver
-                or api.properties.get('mastername') == 'client.v8.branches'),
+                or api.properties.get('mainname') == 'client.v8.branches'),
       revert=api.tryserver.is_tryserver)
 
   if api.tryserver.is_tryserver:
@@ -65,8 +65,8 @@ def _sanitize_nonalpha(text):
 
 
 def GenTests(api):
-  for mastername, master_config in api.v8.BUILDERS.iteritems():
-    for buildername, bot_config in master_config['builders'].iteritems():
+  for mainname, main_config in api.v8.BUILDERS.iteritems():
+    for buildername, bot_config in main_config['builders'].iteritems():
       bot_type = bot_config.get('bot_type', 'builder_tester')
 
       if bot_type in ['builder', 'builder_tester']:
@@ -74,9 +74,9 @@ def GenTests(api):
 
       v8_config_kwargs = bot_config.get('v8_config_kwargs', {})
       test = (
-        api.test('full_%s_%s' % (_sanitize_nonalpha(mastername),
+        api.test('full_%s_%s' % (_sanitize_nonalpha(mainname),
                                  _sanitize_nonalpha(buildername))) +
-        api.properties.generic(mastername=mastername,
+        api.properties.generic(mainname=mainname,
                                buildername=buildername,
                                parent_buildername=bot_config.get(
                                    'parent_buildername'),
@@ -85,7 +85,7 @@ def GenTests(api):
                      v8_config_kwargs.get('TARGET_BITS', 64))
       )
 
-      if mastername.startswith('tryserver'):
+      if mainname.startswith('tryserver'):
         test += (api.properties(
             revision='12345',
             patch_url='svn://svn-mirror.golo.chromium.org/patch'))
@@ -94,7 +94,7 @@ def GenTests(api):
 
   yield (
     api.test('try_compile_failure') +
-    api.properties.tryserver(mastername='tryserver.v8',
+    api.properties.tryserver(mainname='tryserver.v8',
                              buildername='v8_win_rel',
                              revision=None) +
     api.platform('win', 32) +
@@ -103,23 +103,23 @@ def GenTests(api):
 
   yield (
     api.test('branch_sync_failure') +
-    api.properties.tryserver(mastername='client.v8.branches',
+    api.properties.tryserver(mainname='client.v8.branches',
                              buildername='V8 Linux - trunk',
                              revision='20123') +
     api.platform('linux', 32) +
     api.step_data('gclient sync', retcode=1)
   )
 
-  mastername = 'client.v8'
+  mainname = 'client.v8'
   buildername = 'V8 Linux - isolates'
-  bot_config = api.v8.BUILDERS[mastername]['builders'][buildername]
+  bot_config = api.v8.BUILDERS[mainname]['builders'][buildername]
   def TestFailures(wrong_results):
     suffix = "_wrong_results" if wrong_results else ""
     return (
-      api.test('full_%s_%s_test_failures%s' % (_sanitize_nonalpha(mastername),
+      api.test('full_%s_%s_test_failures%s' % (_sanitize_nonalpha(mainname),
                                                _sanitize_nonalpha(buildername),
                                                suffix)) +
-      api.properties.generic(mastername=mastername,
+      api.properties.generic(mainname=mainname,
                              buildername=buildername,
                              parent_buildername=bot_config.get(
                                  'parent_buildername')) +
@@ -134,8 +134,8 @@ def GenTests(api):
   yield TestFailures(wrong_results=True)
   yield (
     api.test('full_%s_%s_flaky_test_failures' % (
-        _sanitize_nonalpha(mastername), _sanitize_nonalpha(buildername))) +
-    api.properties.generic(mastername=mastername,
+        _sanitize_nonalpha(mainname), _sanitize_nonalpha(buildername))) +
+    api.properties.generic(mainname=mainname,
                            buildername=buildername,
                            parent_buildername=bot_config.get(
                                'parent_buildername')) +

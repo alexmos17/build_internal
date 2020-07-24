@@ -2,16 +2,16 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import master_config
-from master.factory import chromium_factory
+from main import main_config
+from main.factory import chromium_factory
 
-import master_site_config
+import main_site_config
 
-ActiveMaster = master_site_config.ChromiumWebkit
+ActiveMain = main_site_config.ChromiumWebkit
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 T = helper.Triggerable
 F = helper.Factory
@@ -26,7 +26,7 @@ defaults['category'] = 'deps'
 ################################################################################
 
 # Archive location
-rel_archive = master_config.GetGSUtilUrl('chromium-build-transfer',
+rel_archive = main_config.GetGSUtilUrl('chromium-build-transfer',
                                          'WebKit Win Builder (deps)')
 
 #
@@ -41,7 +41,7 @@ B('WebKit Win Builder (deps)', 'f_webkit_win_rel',
   scheduler='global_deps_scheduler', builddir='webkit-win-pinned-rel',
   auto_reboot=False)
 F('f_webkit_win_rel', win().ChromiumFactory(
-    slave_type='Builder',
+    subordinate_type='Builder',
     build_url=rel_archive,
     project='all.sln;blink_tests',
     factory_properties={
@@ -55,17 +55,17 @@ F('f_webkit_win_rel', win().ChromiumFactory(
 #
 B('WebKit XP (deps)', 'f_webkit_rel_tests', scheduler='s1_chromium_rel_trigger')
 F('f_webkit_rel_tests', win().ChromiumFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=rel_archive,
     tests=chromium_factory.blink_tests,
     factory_properties={
       'additional_expectations': [
         ['content', 'test', 'test_expectations.txt' ],
       ],
-      'archive_webkit_results': ActiveMaster.is_production_host,
+      'archive_webkit_results': ActiveMain.is_production_host,
       'generate_gtest_json': True,
       'test_results_server': 'test-results.appspot.com',
     }))
 
-def Update(_config, _active_master, c):
+def Update(_config, _active_main, c):
   return helper.Update(c)

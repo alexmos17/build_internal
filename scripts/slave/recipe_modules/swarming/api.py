@@ -4,7 +4,7 @@
 
 import functools
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 
 # Minimally supported version of swarming.py script (reported by --version).
@@ -143,7 +143,7 @@ class SwarmingApi(recipe_api.RecipeApi):
     Platform name is usually provided by 'platform' recipe module, it's one
     of 'win', 'linux', 'mac'. This function returns more concrete Swarming OS
     dimension that represent this platform on Swarming by default. For example,
-    currently 'win' is represented by Windows 7 Swarming slaves ('Windows-6.1'
+    currently 'win' is represented by Windows 7 Swarming subordinates ('Windows-6.1'
     OS dimension).
 
     Recipes are free to use other OS dimension if there's a need for it. For
@@ -472,7 +472,7 @@ class SwarmingTask(object):
           run the task as well as command line to launch. See 'isolate' recipe
           module.
       dimensions: key-value mapping with swarming dimensions that specify
-          on what Swarming slaves task can run. One important dimension is 'OS',
+          on what Swarming subordinates task can run. One important dimension is 'OS',
           which defines platform flavor to run the task on.
       env: key-value mapping with additional environment variables to add to
           environment before launching the task executable.

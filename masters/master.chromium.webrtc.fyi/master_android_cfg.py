@@ -6,7 +6,7 @@ from buildbot.scheduler import Periodic
 from buildbot.scheduler import Triggerable
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-from master.factory import annotator_factory
+from main.factory import annotator_factory
 
 m_annotator = annotator_factory.AnnotatorFactory()
 
@@ -39,11 +39,11 @@ def Update(c):
     {'name': 'Android Tests (dbg) (JB Nexus7.2)'},
     {
       'name': 'Android GN',
-      'slavebuilddir': 'android_gn',
+      'subordinatebuilddir': 'android_gn',
     },
     {
       'name': 'Android GN (dbg)',
-      'slavebuilddir': 'android_gn',
+      'subordinatebuilddir': 'android_gn',
     },
   ]
 
@@ -55,6 +55,6 @@ def Update(c):
             triggers=spec.get('triggers')),
         'category': 'android',
         'notify_on_missing': True,
-        'slavebuilddir': spec.get('slavebuilddir', 'android'),
+        'subordinatebuilddir': spec.get('subordinatebuilddir', 'android'),
       } for spec in specs
   ])

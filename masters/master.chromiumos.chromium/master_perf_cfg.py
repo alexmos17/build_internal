@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import master_config
-from master.factory import chromeos_factory
+from main import main_config
+from main.factory import chromeos_factory
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 F = helper.Factory
 
@@ -15,7 +15,7 @@ F = helper.Factory
 defaults['category'] = '5chromiumos perf'
 
 _PERF_SCHEDULER_NAME = 'chromium_src_perf'
-helper.Scheduler(_PERF_SCHEDULER_NAME, branch='master', treeStableTimer=60)
+helper.Scheduler(_PERF_SCHEDULER_NAME, branch='main', treeStableTimer=60)
 
 def Builder(sname, flavor, root, board):
   fname = '%s-%s' % (sname, flavor)
@@ -35,6 +35,6 @@ def Builder(sname, flavor, root, board):
 Builder('x86', 'chromium', 'shared_external', 'x86-generic')
 Builder('amd64', 'chromium', 'shared_external', 'amd64-generic')
 
-def Update(_config, _active_master, c):
+def Update(_config, _active_main, c):
   return helper.Update(c)
 

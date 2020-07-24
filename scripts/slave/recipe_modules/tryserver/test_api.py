@@ -1,4 +1,4 @@
-from slave import recipe_test_api
+from subordinate import recipe_test_api
 
 class TryserverTestApi(recipe_test_api.RecipeTestApi):
   def patch_content(self):

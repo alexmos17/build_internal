@@ -3,14 +3,14 @@
 # found in the LICENSE file.
 
 from common import chromium_utils
-from master import gitiles_poller
+from main import gitiles_poller
 
 
 def Update(config, c):
-  webrtc_repo_url = config.Master.git_server_url + '/external/webrtc/'
+  webrtc_repo_url = config.Main.git_server_url + '/external/webrtc/'
   webrtc_poller = gitiles_poller.GitilesPoller(
       webrtc_repo_url,
-      branches=['master'],
+      branches=['main'],
       project='trunk', # This translates to branch of changes.
       pollInterval=10,
       revlinktmpl='http://code.google.com/p/webrtc/source/detail?r=%s',

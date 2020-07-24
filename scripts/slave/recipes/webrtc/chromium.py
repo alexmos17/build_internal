@@ -24,20 +24,20 @@ DEPS = [
 
 
 def GenSteps(api):
-  mastername = api.properties.get('mastername')
+  mainname = api.properties.get('mainname')
   buildername = api.properties.get('buildername')
-  master_dict = api.webrtc.BUILDERS.get(mastername, {})
-  master_settings = master_dict.get('settings', {})
-  bot_config = master_dict.get('builders', {}).get(buildername)
-  assert bot_config, ('Unrecognized builder name "%r" for master "%r".' %
-                      (buildername, mastername))
+  main_dict = api.webrtc.BUILDERS.get(mainname, {})
+  main_settings = main_dict.get('settings', {})
+  bot_config = main_dict.get('builders', {}).get(buildername)
+  assert bot_config, ('Unrecognized builder name "%r" for main "%r".' %
+                      (buildername, mainname))
   recipe_config_name = bot_config['recipe_config']
   recipe_config = api.webrtc.RECIPE_CONFIGS.get(recipe_config_name)
   assert recipe_config, ('Cannot find recipe_config "%s" for builder "%r".' %
                          (recipe_config_name, buildername))
 
   api.webrtc.set_config(recipe_config['webrtc_config'],
-                        PERF_CONFIG=master_settings.get('PERF_CONFIG'),
+                        PERF_CONFIG=main_settings.get('PERF_CONFIG'),
                         **bot_config.get('webrtc_config_kwargs', {}))
   api.chromium.set_config(recipe_config['chromium_config'],
                           **bot_config.get('chromium_config_kwargs', {}))
@@ -68,7 +68,7 @@ def GenSteps(api):
 
     compile_targets = recipe_config.get('compile_targets', [])
     api.chromium.compile(targets=compile_targets)
-    if mastername == 'chromium.webrtc.fyi' and not run_gn:
+    if mainname == 'chromium.webrtc.fyi' and not run_gn:
       api.webrtc.sizes(got_revision)
 
   archive_revision = api.properties.get('parent_got_revision', got_revision)
@@ -103,21 +103,21 @@ def _sanitize_nonalpha(text):
 def GenTests(api):
   builders = api.webrtc.BUILDERS
 
-  def generate_builder(mastername, buildername, revision=None,
+  def generate_builder(mainname, buildername, revision=None,
                        failing_test=None, parent_got_revision=None,
                        suffix=None):
     suffix = suffix or ''
-    bot_config = builders[mastername]['builders'][buildername]
+    bot_config = builders[mainname]['builders'][buildername]
     bot_type = bot_config.get('bot_type', 'builder_tester')
 
     if bot_type in ('builder', 'builder_tester'):
       assert bot_config.get('parent_buildername') is None, (
-          'Unexpected parent_buildername for builder %r on master %r.' %
-              (buildername, mastername))
+          'Unexpected parent_buildername for builder %r on main %r.' %
+              (buildername, mainname))
     test = (
-      api.test('%s_%s%s' % (_sanitize_nonalpha(mastername),
+      api.test('%s_%s%s' % (_sanitize_nonalpha(mainname),
                             _sanitize_nonalpha(buildername), suffix)) +
-      api.properties.generic(mastername=mastername,
+      api.properties.generic(mainname=mainname,
                              buildername=buildername,
                              revision=revision,
                              parent_buildername=bot_config.get(
@@ -135,29 +135,29 @@ def GenTests(api):
 
     return test
 
-  for mastername in ('chromium.webrtc', 'chromium.webrtc.fyi'):
-    master_config = builders[mastername]
-    for buildername in master_config['builders'].keys():
-      revision = '12345' if mastername == 'chromium.webrtc.fyi' else '321321'
-      yield generate_builder(mastername, buildername, revision)
+  for mainname in ('chromium.webrtc', 'chromium.webrtc.fyi'):
+    main_config = builders[mainname]
+    for buildername in main_config['builders'].keys():
+      revision = '12345' if mainname == 'chromium.webrtc.fyi' else '321321'
+      yield generate_builder(mainname, buildername, revision)
 
   # Forced build (not specifying any revision) and failing tests.
-  mastername = 'chromium.webrtc'
-  yield generate_builder(mastername, 'Linux Builder', revision=None,
+  mainname = 'chromium.webrtc'
+  yield generate_builder(mainname, 'Linux Builder', revision=None,
                          suffix='_forced')
 
   buildername = 'Linux Tester'
-  yield generate_builder(mastername, buildername, revision=None,
+  yield generate_builder(mainname, buildername, revision=None,
                          suffix='_forced_invalid')
-  yield generate_builder(mastername, buildername, revision='321321',
+  yield generate_builder(mainname, buildername, revision='321321',
                          failing_test='browser_tests', suffix='_failing_test')
 
   # Periodic scheduler triggered builds also don't contain revision.
-  mastername = 'chromium.webrtc.fyi'
-  yield generate_builder(mastername, 'Win Builder', revision=None,
+  mainname = 'chromium.webrtc.fyi'
+  yield generate_builder(mainname, 'Win Builder', revision=None,
                          suffix='_periodic_triggered')
 
   # Testers gets got_revision value from builder passed as parent_got_revision.
-  yield generate_builder(mastername, 'Win7 Tester', revision=None,
+  yield generate_builder(mainname, 'Win7 Tester', revision=None,
                          parent_got_revision='12345',
                          suffix='_periodic_triggered')

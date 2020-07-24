@@ -2,16 +2,16 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import master_config
-from master.factory import chromium_factory
+from main import main_config
+from main.factory import chromium_factory
 
-import master_site_config
+import main_site_config
 
-ActiveMaster = master_site_config.Chromium
+ActiveMain = main_site_config.Chromium
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 D = helper.Dependent
 F = helper.Factory
@@ -28,7 +28,7 @@ def linux_android(): return chromium_factory.ChromiumFactory(
 defaults['category'] = '1clobber'
 
 # Global scheduler
-S('chromium', branch='master', treeStableTimer=60)
+S('chromium', branch='main', treeStableTimer=60)
 
 ################################################################################
 ## Windows
@@ -46,7 +46,7 @@ F('win_clobber', win().ChromiumFactory(
     ],
     options=['--compiler=goma'],
     factory_properties={
-      'archive_build': ActiveMaster.is_production_host,
+      'archive_build': ActiveMain.is_production_host,
       'gs_bucket': 'gs://chromium-browser-snapshots',
       'gs_acl': 'public-read',
       'show_perf_results': True,
@@ -54,7 +54,7 @@ F('win_clobber', win().ChromiumFactory(
       'expectations': True,
       'process_dumps': True,
       'start_crash_handler': True,
-      'generate_gtest_json': ActiveMaster.is_production_host,
+      'generate_gtest_json': ActiveMain.is_production_host,
       'gclient_env': {
         'GYP_DEFINES': 'test_isolation_mode=noop',
         'GYP_USE_SEPARATE_MSPDBSRV': '1',
@@ -75,13 +75,13 @@ F('mac_clobber', mac().ChromiumFactory(
     ],
     options=['--compiler=goma-clang'],
     factory_properties={
-      'archive_build': ActiveMaster.is_production_host,
+      'archive_build': ActiveMain.is_production_host,
       'gs_bucket': 'gs://chromium-browser-snapshots',
       'gs_acl': 'public-read',
       'show_perf_results': True,
       'perf_id': 'chromium-rel-mac',
       'expectations': True,
-      'generate_gtest_json': ActiveMaster.is_production_host,
+      'generate_gtest_json': ActiveMain.is_production_host,
       'gclient_env': {
         'GYP_DEFINES': 'test_isolation_mode=noop mac_strip_release=1',
       },
@@ -103,13 +103,13 @@ F('linux_clobber', linux().ChromiumFactory(
     ],
     options=['--compiler=goma', '--', 'all'],
     factory_properties={
-      'archive_build': ActiveMaster.is_production_host,
+      'archive_build': ActiveMain.is_production_host,
       'gs_bucket': 'gs://chromium-browser-snapshots',
       'gs_acl': 'public-read',
       'show_perf_results': True,
       'perf_id': 'chromium-rel-linux',
       'expectations': True,
-      'generate_gtest_json': ActiveMaster.is_production_host,
+      'generate_gtest_json': ActiveMain.is_production_host,
       'gclient_env': {
         'GYP_DEFINES':
             'target_arch=ia32 test_isolation_mode=noop linux_dump_symbols=0',
@@ -126,11 +126,11 @@ F('linux64_clobber', linux().ChromiumFactory(
     ],
     options=['--compiler=goma', '--', 'all'],
     factory_properties={
-      'archive_build': ActiveMaster.is_production_host,
+      'archive_build': ActiveMain.is_production_host,
       'gs_bucket': 'gs://chromium-browser-snapshots',
       'gs_acl': 'public-read',
       'show_perf_results': True,
-      'generate_gtest_json': ActiveMaster.is_production_host,
+      'generate_gtest_json': ActiveMain.is_production_host,
       'perf_id': 'chromium-rel-linux-64',
       'expectations': True,
       'gclient_env': {
@@ -153,7 +153,7 @@ F('f_android_clobber', linux_android().ChromiumAnnotationFactory(
     ],
     factory_properties={
       'android_bot_id': 'main-clobber-rel',
-      'archive_build': ActiveMaster.is_production_host,
+      'archive_build': ActiveMain.is_production_host,
       'gs_acl': 'public-read',
       'gs_bucket': 'gs://chromium-browser-snapshots',
       'perf_id': 'android-release',
@@ -163,5 +163,5 @@ F('f_android_clobber', linux_android().ChromiumAnnotationFactory(
     ))
 
 
-def Update(_config, active_master, c):
+def Update(_config, active_main, c):
   return helper.Update(c)

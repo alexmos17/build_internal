@@ -143,8 +143,8 @@ class TestMailNotifier(unittest.TestCase):
         mn.parent = self
         
         self.status = Mock()
-        mn.master_status = Mock()
-        mn.master_status.getBuilder = fakeGetBuilder
+        mn.main_status = Mock()
+        mn.main_status.getBuilder = fakeGetBuilder
         mn.buildMessageDict = Mock()
         mn.buildMessageDict.return_value = {"body":"body", "type":"text",
                                             "subject":"subject"}

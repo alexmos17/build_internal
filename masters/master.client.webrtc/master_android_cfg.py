@@ -5,7 +5,7 @@
 from buildbot.scheduler import Triggerable
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-from master.factory import annotator_factory
+from main.factory import annotator_factory
 
 m_annotator = annotator_factory.AnnotatorFactory()
 
@@ -32,8 +32,8 @@ def Update(c):
       ]),
   ])
 
-  # 'slavebuilddir' below is used to reduce the number of checkouts since some
-  # of the builders are pooled over multiple slave machines.
+  # 'subordinatebuilddir' below is used to reduce the number of checkouts since some
+  # of the builders are pooled over multiple subordinate machines.
   specs = [
     {
       'name': 'Android Builder',
@@ -45,19 +45,19 @@ def Update(c):
     },
     {
       'name': 'Android Clang (dbg)',
-      'slavebuilddir': 'android_clang',
+      'subordinatebuilddir': 'android_clang',
     },
     {
       'name': 'Android ARM64 (dbg)',
-      'slavebuilddir': 'android_arm64',
+      'subordinatebuilddir': 'android_arm64',
     },
     {
       'name': 'Android GN',
-      'slavebuilddir': 'android_gn',
+      'subordinatebuilddir': 'android_gn',
     },
     {
       'name': 'Android GN (dbg)',
-      'slavebuilddir': 'android_gn',
+      'subordinatebuilddir': 'android_gn',
     },
     {'name': 'Android Tests (KK Nexus5)(dbg)'},
     {'name': 'Android Tests (JB Nexus7.2)(dbg)'},
@@ -72,6 +72,6 @@ def Update(c):
                                            triggers=spec.get('triggers')),
         'notify_on_missing': True,
         'category': 'android',
-        'slavebuilddir': spec.get('slavebuilddir', 'android'),
+        'subordinatebuilddir': spec.get('subordinatebuilddir', 'android'),
       } for spec in specs
   ])

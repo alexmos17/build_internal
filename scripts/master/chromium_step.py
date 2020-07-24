@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Subclasses of various slave command classes."""
+"""Subclasses of various subordinate command classes."""
 
 import copy
 import errno
@@ -271,7 +271,7 @@ class GClient(source.Source):
         description.append(webrtc_revision)
 
   def commandComplete(self, cmd):
-    """Handles status updates from buildbot slave when the step is done.
+    """Handles status updates from buildbot subordinate when the step is done.
 
     Update the relevant got_XX_revision build properties if available.
     """
@@ -510,7 +510,7 @@ class AnnotationObserver(buildstep.LogLineObserver):
 
   @@@STEP_LOG_END_PERF@<label>@@@
   Same as STEP_LOG_END, but signifies that this is a perf log and should be
-  saved to the master.
+  saved to the main.
 
   @@@STEP_CLEAR@@@
   Reset the text description of the current step.
@@ -555,15 +555,15 @@ class AnnotationObserver(buildstep.LogLineObserver):
   """
 
   # Base URL for performance test results.
-  PERF_BASE_URL = config.Master.perf_base_url
-  PERF_REPORT_URL_SUFFIX = config.Master.perf_report_url_suffix
+  PERF_BASE_URL = config.Main.perf_base_url
+  PERF_REPORT_URL_SUFFIX = config.Main.perf_report_url_suffix
 
   # Directory in which to save perf output data files.
-  PERF_OUTPUT_DIR = config.Master.perf_output_dir
+  PERF_OUTPUT_DIR = config.Main.perf_output_dir
 
   # For the GraphingLogProcessor, the file into which it will save a list
   # of graph names for use by the JS doing the plotting.
-  GRAPH_LIST = config.Master.perf_graph_list
+  GRAPH_LIST = config.Main.perf_graph_list
 
   # --------------------------------------------------------------------------
   # PERF TEST SETTINGS
@@ -768,7 +768,7 @@ class AnnotationObserver(buildstep.LogLineObserver):
     if section['step'].isFinished():
       return
 
-    # Everything was fine on the slave side,
+    # Everything was fine on the subordinate side,
     # so the final result depends on async operations.
     async_ops = section['async_ops']
     if async_ops:
@@ -1019,7 +1019,7 @@ class AnnotationObserver(buildstep.LogLineObserver):
   def STEP_LOG_END_PERF(self, log_label, perf_dashboard_name):
     # Support: @@@STEP_LOG_END_PERF@<label>@<line>@@@
     # (finalizes log to step, marks it as being a perf step
-    # requiring logs to be stored on the master)
+    # requiring logs to be stored on the main)
     current_logs = self.cursor['annotated_logs']
     log_text = '\n'.join(current_logs.get(log_label, [])) + '\n'
 
@@ -1030,7 +1030,7 @@ class AnnotationObserver(buildstep.LogLineObserver):
           self.show_perf, self.perf_id, perf_dashboard_name,
           self.perf_report_url_suffix)
 
-    PERF_EXPECTATIONS_PATH = ('../../scripts/master/log_parser/'
+    PERF_EXPECTATIONS_PATH = ('../../scripts/main/log_parser/'
                               'perf_expectations/')
     perf_output_dir = None
     if output_dir:
@@ -1169,7 +1169,7 @@ class AnnotationObserver(buildstep.LogLineObserver):
   def triggerBuilds(self, builder_names, properties):
     """Creates a new buildset."""
     build = self.command.build
-    master = build.builder.botmaster.parent
+    main = build.builder.botmain.parent
     current_properties = build.getProperties()
 
     # Use the same source stamp.
@@ -1177,12 +1177,12 @@ class AnnotationObserver(buildstep.LogLineObserver):
     revision = current_properties.getProperty('got_revision')
     if revision:
       source_stamp = source_stamp.getAbsoluteSourceStamp(revision)
-    ssid = yield source_stamp.getSourceStampId(master)
+    ssid = yield source_stamp.getSourceStampId(main)
 
     properties = self.getPropertiesForTriggeredBuild(current_properties,
                                                      properties)
 
-    bsid, brids = yield master.addBuildset(
+    bsid, brids = yield main.addBuildset(
         ssid=ssid,
         reason='Triggered by %s' % build.builder.name,
         properties=properties,
@@ -1263,10 +1263,10 @@ class AnnotatedCommand(ProcessLogShellStep):
         'BUILDBOT_BUILDNUMBER': WithProperties('%(buildnumber:-None)s'),
         'BUILDBOT_CLOBBER': clobber or WithProperties('%(clobber:+1)s'),
         'BUILDBOT_GOT_REVISION': WithProperties('%(got_revision:-None)s'),
-        'BUILDBOT_MASTERNAME': WithProperties('%(mastername:-None)s'),
+        'BUILDBOT_MASTERNAME': WithProperties('%(mainname:-None)s'),
         'BUILDBOT_REVISION': WithProperties('%(revision:-None)s'),
         'BUILDBOT_SCHEDULER': WithProperties('%(scheduler:-None)s'),
-        'BUILDBOT_SLAVENAME': WithProperties('%(slavename:-None)s'),
+        'BUILDBOT_SLAVENAME': WithProperties('%(subordinatename:-None)s'),
     }
     # Apply the passed in environment on top.
     old_env = kwargs.get('env') or {}

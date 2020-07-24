@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Utility class to build the Skia master BuildFactory's.
+"""Utility class to build the Skia main BuildFactory's.
 
 Based on gclient_factory.py and adds Skia-specific steps."""
 
@@ -11,8 +11,8 @@ import posixpath
 
 from buildbot.process.properties import WithProperties
 
-from master.factory import gclient_factory
-from master.factory.skia import commands as skia_commands
+from main.factory import gclient_factory
+from main.factory.skia import commands as skia_commands
 
 import config
 
@@ -25,14 +25,14 @@ BENCH_GRAPH_Y = 768
 # TODO(epoger): My intent is to make the build steps identical on all platforms
 # and thus remove the need for the whole target_platform parameter.
 # For now, these must match the target_platform values used in
-# third_party/chromium_buildbot/scripts/master/factory/gclient_factory.py ,
+# third_party/chromium_buildbot/scripts/main/factory/gclient_factory.py ,
 # because we pass these values into GClientFactory.__init__() .
 TARGET_PLATFORM_LINUX = 'linux'
 TARGET_PLATFORM_MAC = 'mac'
 TARGET_PLATFORM_WIN32 = 'win32'
 
 class SkiaFactory(gclient_factory.GClientFactory):
-  """Encapsulates data and methods common to the Skia master.cfg files."""
+  """Encapsulates data and methods common to the Skia main.cfg files."""
 
   def __init__(self, do_upload_results=False,
                build_subdir='trunk', other_subdirs=None,
@@ -59,11 +59,11 @@ class SkiaFactory(gclient_factory.GClientFactory):
     # Create gclient solutions corresponding to the main build_subdir
     # and other directories we also wish to check out.
     solutions = [gclient_factory.GClientSolution(
-        svn_url=config.Master.skia_url + build_subdir, name=build_subdir)]
+        svn_url=config.Main.skia_url + build_subdir, name=build_subdir)]
     if other_subdirs:
       for other_subdir in other_subdirs:
         solutions.append(gclient_factory.GClientSolution(
-            svn_url=config.Master.skia_url + other_subdir, name=other_subdir))
+            svn_url=config.Main.skia_url + other_subdir, name=other_subdir))
     gclient_factory.GClientFactory.__init__(
         self, build_dir='', solutions=solutions,
         target_platform=target_platform)
@@ -75,8 +75,8 @@ class SkiaFactory(gclient_factory.GClientFactory):
     self._builder_name = builder_name
     self._target_platform = target_platform
 
-    # Set _default_clobber based on config.Master
-    self._default_clobber = getattr(config.Master, 'default_clobber', False)
+    # Set _default_clobber based on config.Main
+    self._default_clobber = getattr(config.Main, 'default_clobber', False)
 
     # Platform-specific stuff.
     if target_platform == TARGET_PLATFORM_WIN32:
@@ -183,9 +183,9 @@ class SkiaFactory(gclient_factory.GClientFactory):
     # Run "bench", piping the output somewhere so we can graph
     # results over time.
     #
-    # TODO(epoger): Currently this is a hack--we just tell the slave to
+    # TODO(epoger): Currently this is a hack--we just tell the subordinate to
     # pipe the output to a directory on local disk.
-    # Eventually, we will want the master to capture the output and store it.
+    # Eventually, we will want the main to capture the output and store it.
     #
     # Running bench can be quite slow, so run it fewer times if we aren't
     # recording the output.

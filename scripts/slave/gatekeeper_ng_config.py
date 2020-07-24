@@ -5,9 +5,9 @@
 
 """Loads gatekeeper configuration files for use with gatekeeper_ng.py.
 
-The gatekeeper json configuration file has two main sections: 'masters'
+The gatekeeper json configuration file has two main sections: 'mains'
 and 'categories.' The following shows the breakdown of a possible config,
-but note that all nodes are optional (including the root 'masters' and
+but note that all nodes are optional (including the root 'mains' and
 'categories' nodes).
 
 A builder ultimately needs 4 lists (sets):
@@ -17,13 +17,13 @@ A builder ultimately needs 4 lists (sets):
   sheriff_classes: classes of sheriffs to notify on build failure
 
 Builders can inherit these properties from categories, they can inherit
-tree_notify and sheriff_classes from their master, and they can have these
+tree_notify and sheriff_classes from their main, and they can have these
 properties assigned in the builder itself. Any property not specified
 is considered blank (empty set), and inheritance is always constructive (you
 can't remove a property by inheriting or overwriting it). Builders can inherit
-categories from their master.
+categories from their main.
 
-A master consists of zero or more sections, which specify which builders are
+A main consists of zero or more sections, which specify which builders are
 watched by the section and what action should be taken. A section can specify
 tree_closing to be false, which causes the section to only send out emails
 instead of closing the tree. A section or builder can also specify to respect
@@ -31,7 +31,7 @@ a build's failure status with respect_build_status.
 
 The 'subject_template' key is the template used for the email subjects. Its
 formatting arguments are found at https://chromium.googlesource.com/chromium/
-  tools/chromium-build/+/master/gatekeeper_mailer.py, but the list is
+  tools/chromium-build/+/main/gatekeeper_mailer.py, but the list is
 reproduced here:
 
   %(result)s: 'warning' or 'failure'
@@ -59,7 +59,7 @@ The 'comment' key can be put anywhere and is ignored by the parser.
 
 # Python, not JSON.
 {
-  'masters': {
+  'mains': {
     'http://build.chromium.org/p/chromium.win': [
       {
         'sheriff_classes': ['sheriff_win'],
@@ -135,8 +135,8 @@ def allowed_keys(test_dict, *keys):
 def load_gatekeeper_config(filename):
   """Loads and verifies config json, constructs builder config dict."""
 
-  # Keys which are allowed in a master or builder section.
-  master_keys = ['excluded_builders',
+  # Keys which are allowed in a main or builder section.
+  main_keys = ['excluded_builders',
                  'excluded_steps',
                  'forgive_all',
                  'sheriff_classes',
@@ -159,29 +159,29 @@ def load_gatekeeper_config(filename):
   ]
 
   # These keys are strings instead of sets. Strings can't be merged,
-  # so more specific (master -> category -> builder) strings clobber
+  # so more specific (main -> category -> builder) strings clobber
   # more generic ones.
   strings = ['forgive_all', 'status_template', 'subject_template']
 
   with open(filename) as f:
     raw_gatekeeper_config = json.load(f)
 
-  allowed_keys(raw_gatekeeper_config, 'categories', 'masters')
+  allowed_keys(raw_gatekeeper_config, 'categories', 'mains')
 
   categories = raw_gatekeeper_config.get('categories', {})
-  masters = raw_gatekeeper_config.get('masters', {})
+  mains = raw_gatekeeper_config.get('mains', {})
 
   for category in categories.values():
     allowed_keys(category, *builder_keys)
 
   gatekeeper_config = {}
-  for master_url, master_sections in masters.iteritems():
-    for master_section in master_sections:
-      gatekeeper_config.setdefault(master_url, []).append({})
-      allowed_keys(master_section, 'builders', 'categories', 'close_tree',
-                   'respect_build_status', *master_keys)
+  for main_url, main_sections in mains.iteritems():
+    for main_section in main_sections:
+      gatekeeper_config.setdefault(main_url, []).append({})
+      allowed_keys(main_section, 'builders', 'categories', 'close_tree',
+                   'respect_build_status', *main_keys)
 
-      builders = master_section.get('builders', {})
+      builders = main_section.get('builders', {})
       for buildername, builder in builders.iteritems():
         allowed_keys(builder, 'categories', *builder_keys)
         for key, item in builder.iteritems():
@@ -191,8 +191,8 @@ def load_gatekeeper_config(filename):
             assert isinstance(item, list)
             assert all(isinstance(elem, basestring) for elem in item)
 
-        gatekeeper_config[master_url][-1].setdefault(buildername, {})
-        gatekeeper_builder = gatekeeper_config[master_url][-1][buildername]
+        gatekeeper_config[main_url][-1].setdefault(buildername, {})
+        gatekeeper_builder = gatekeeper_config[main_url][-1][buildername]
 
         # Populate with specified defaults.
         for k in builder_keys:
@@ -203,22 +203,22 @@ def load_gatekeeper_config(filename):
           else:
             gatekeeper_builder.setdefault(k, set())
 
-        # Inherit any values from the master.
-        for k in master_keys:
+        # Inherit any values from the main.
+        for k in main_keys:
           if k in strings:
-            if k in master_section:
-              gatekeeper_builder[k] = master_section[k]
+            if k in main_section:
+              gatekeeper_builder[k] = main_section[k]
           else:
-            gatekeeper_builder[k] |= set(master_section.get(k, []))
+            gatekeeper_builder[k] |= set(main_section.get(k, []))
 
-        gatekeeper_builder['close_tree'] = master_section.get('close_tree',
+        gatekeeper_builder['close_tree'] = main_section.get('close_tree',
                                                               True)
-        gatekeeper_builder['respect_build_status'] = master_section.get(
+        gatekeeper_builder['respect_build_status'] = main_section.get(
             'respect_build_status', False)
 
         # Inherit any values from the categories.
         all_categories = (builder.get('categories', []) +
-                          master_section.get( 'categories', []))
+                          main_section.get( 'categories', []))
         for c in all_categories:
           for k in builder_keys:
             if k in strings:
@@ -252,7 +252,7 @@ def load_gatekeeper_tree_config(filename):
   with open(filename) as f:
     trees_config = json.load(f)
 
-  tree_config_keys = ['masters',
+  tree_config_keys = ['mains',
                       'build-db',
                       'open-tree',
                       'password-file',
@@ -265,9 +265,9 @@ def load_gatekeeper_tree_config(filename):
     allowed_keys(tree_config, *tree_config_keys)
     assert isinstance(tree_name, basestring)
 
-    masters = tree_config.get('masters', [])
-    assert isinstance(masters, list)
-    assert all(isinstance(master, basestring) for master in masters)
+    mains = tree_config.get('mains', [])
+    assert isinstance(mains, list)
+    assert all(isinstance(main, basestring) for main in mains)
 
     assert isinstance(tree_config.get('build-db', ''), basestring)
     assert isinstance(tree_config.get('open-tree', True), bool)
@@ -287,8 +287,8 @@ def gatekeeper_section_hash(gatekeeper_section):
 
 def inject_hashes(gatekeeper_config):
   new_config = copy.deepcopy(gatekeeper_config)
-  for master in new_config.values():
-    for section in master:
+  for main in new_config.values():
+    for section in main:
       section['section_hash'] = gatekeeper_section_hash(section)
   return new_config
 

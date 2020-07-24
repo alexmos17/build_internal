@@ -22,8 +22,8 @@ def GenSteps(api):
 
 
 def GenTests(api):
-  mastername = 'client.skia'
-  slavename = 'skiabot-shuttle-ubuntu12-003'
+  mainname = 'client.skia'
+  subordinatename = 'skiabot-shuttle-ubuntu12-003'
   builders = [
     'Build-Ubuntu13.10-GCC4.8-Arm7-Debug-CrOS_Daisy',
     'Build-Ubuntu13.10-GCC4.8-x86_64-Debug',
@@ -99,19 +99,19 @@ def GenTests(api):
     test = (
       api.test(builder) +
       api.properties(buildername=builder,
-                     mastername=mastername,
-                     slavename=slavename,
+                     mainname=mainname,
+                     subordinatename=subordinatename,
                      buildnumber=5) +
       api.path.exists(
-          api.path['slave_build'].join(
+          api.path['subordinate_build'].join(
               'skia', 'expectations', 'gm',
               builder_name_schema.GetWaterfallBot(builder),
               'expected-results.json'),
-          api.path['slave_build'].join('skia', 'expectations', 'gm',
+          api.path['subordinate_build'].join('skia', 'expectations', 'gm',
                                        'ignored-tests.txt'),
-          api.path['slave_build'].join('skia', 'expectations', 'skimage',
+          api.path['subordinate_build'].join('skia', 'expectations', 'skimage',
                                        builder, 'expected-results.json'),
-          api.path['slave_build'].join('playback', 'skps', 'SKP_VERSION')
+          api.path['subordinate_build'].join('playback', 'skps', 'SKP_VERSION')
       )
     )
     if 'Android' in builder or 'NaCl' in builder:
@@ -128,10 +128,10 @@ def GenTests(api):
   yield (
     api.test('failed_gm') +
     api.properties(buildername=builder,
-                   mastername=mastername,
-                   slavename=slavename) +
+                   mainname=mainname,
+                   subordinatename=subordinatename) +
     api.path.exists(
-        api.path['slave_build'].join('skia', 'expectations', 'skimage',
+        api.path['subordinate_build'].join('skia', 'expectations', 'skimage',
                                      builder, 'expected-results.json')
     ) +
     api.step_data('gm', retcode=1)
@@ -140,8 +140,8 @@ def GenTests(api):
   yield (
     api.test('has_ccache_android') +
     api.properties(buildername='Build-Ubuntu13.10-GCC4.8-Arm7-Debug-Android',
-                   mastername=mastername,
-                   slavename=slavename) +
+                   mainname=mainname,
+                   subordinatename=subordinatename) +
     api.step_data('has ccache?', retcode=0,
                   stdout=api.raw_io.output('/usr/bin/ccache'))
   )
@@ -149,8 +149,8 @@ def GenTests(api):
   yield (
     api.test('has_ccache_nacl') +
     api.properties(buildername='Build-Ubuntu13.10-GCC4.8-NaCl-Debug',
-                   mastername=mastername,
-                   slavename=slavename) +
+                   mainname=mainname,
+                   subordinatename=subordinatename) +
     api.step_data('has ccache?', retcode=0,
                   stdout=api.raw_io.output('/usr/bin/ccache'))
   )
@@ -158,7 +158,7 @@ def GenTests(api):
   yield (
     api.test('no_skimage_expectations') +
     api.properties(buildername=builder,
-                   mastername=mastername,
-                   slavename=slavename) +
+                   mainname=mainname,
+                   subordinatename=subordinatename) +
     api.step_data('assert skimage expectations', retcode=1)
   )

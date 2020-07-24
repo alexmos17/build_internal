@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 from RECIPE_MODULES.gclient import CONFIG_CTX
-from slave.recipe_config import BadConf
+from subordinate.recipe_config import BadConf
 
 # TODO(machenbach): Move this to an external configuration file.
 STABLE_BRANCH = '3.27'

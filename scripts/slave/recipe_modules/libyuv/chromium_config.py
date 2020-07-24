@@ -2,10 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave.recipe_config import BadConf
+from subordinate.recipe_config import BadConf
 
 from RECIPE_MODULES.chromium import CONFIG_CTX
-from slave.recipe_config_types import Path
+from subordinate.recipe_config_types import Path
 
 
 @CONFIG_CTX(includes=['chromium'])

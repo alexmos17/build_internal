@@ -3,7 +3,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""A tool to run the crash handler executable, used by the buildbot slaves.
+"""A tool to run the crash handler executable, used by the buildbot subordinates.
 
   When this is run, the current directory (cwd) should be the outer build
   directory (e.g., chrome-release/build/).
@@ -24,7 +24,7 @@ except ImportError:
   sys.exit(1)
 
 from common import chromium_utils
-from slave import build_directory
+from subordinate import build_directory
 
 USAGE = '%s [options]' % os.path.basename(sys.argv[0])
 

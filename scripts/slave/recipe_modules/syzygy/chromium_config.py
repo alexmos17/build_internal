@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 from RECIPE_MODULES.chromium import CONFIG_CTX
-from slave.recipe_config_types import Path
+from subordinate.recipe_config_types import Path
 
 
 SYZYGY_SLN = Path('[CHECKOUT]', 'syzygy', 'syzygy.sln')

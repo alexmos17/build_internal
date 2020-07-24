@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 class ArchiveApi(recipe_api.RecipeApi):
   """Chromium specific module for zipping, uploading and downloading build
@@ -31,7 +31,7 @@ class ArchiveApi(recipe_api.RecipeApi):
     kwargs['allow_subannotations'] = True
     self.m.python(
       step_name,
-      self.m.path['build'].join('scripts', 'slave', 'zip_build.py'),
+      self.m.path['build'].join('scripts', 'subordinate', 'zip_build.py'),
       args,
       **kwargs
     )
@@ -53,7 +53,7 @@ class ArchiveApi(recipe_api.RecipeApi):
     args.extend(self.m.json.property_args())
     self.m.python(
       step_name,
-      self.m.path['build'].join('scripts', 'slave', 'extract_build.py'),
+      self.m.path['build'].join('scripts', 'subordinate', 'extract_build.py'),
       args,
       **kwargs
     )
@@ -70,7 +70,7 @@ class ArchiveApi(recipe_api.RecipeApi):
 
     The reason this is named 'legacy' is that there are a large number
     of dependencies on the exact form of this URL. The combination of
-    zip_build.py, extract_build.py, slave_utils.py, and runtest.py
+    zip_build.py, extract_build.py, subordinate_utils.py, and runtest.py
     require that:
 
     * The platform name be exactly one of 'win32', 'mac', or 'linux'
@@ -124,17 +124,17 @@ class ArchiveApi(recipe_api.RecipeApi):
     return self._legacy_url(True, gs_bucket_name, extra_url_components)
 
   def archive_dependencies(
-      self, step_name, target, master, builder, build, **kwargs):
+      self, step_name, target, main, builder, build, **kwargs):
     """Returns a step invoking archive_dependencies.py to zip up and upload
        build dependency information for the build."""
     try:
       script = self.m.path['build'].join('scripts',
-                                         'slave',
+                                         'subordinate',
                                          'archive_dependencies.py')
       args = []
       args.extend(['--src-dir', self.m.path['checkout']])
       args.extend(['--target', target])
-      args.extend(['--master', master])
+      args.extend(['--main', main])
       args.extend(['--builder', builder])
       args.extend(['--build', build])
       self.m.python(step_name, script, args, **kwargs)

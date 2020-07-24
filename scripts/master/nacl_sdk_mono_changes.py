@@ -3,7 +3,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""This script is used to trigger master.client.nacl.sdk.mono.
+"""This script is used to trigger main.client.nacl.sdk.mono.
 
 This script currently monitors github.com/elijahtaylor/mono.git and
 the latest version of the nacl sdk uploaded.
@@ -56,11 +56,11 @@ def LatestMonoRevision():
     The git hash of the latest revision from the mono repo.
   """
   p = subprocess.Popen([
-      'git', 'ls-remote', MONO_GIT_URL, 'refs/heads/master'
+      'git', 'ls-remote', MONO_GIT_URL, 'refs/heads/main'
   ], stdout=subprocess.PIPE)
   p_stdout, _ = p.communicate()
   parts = str(p_stdout).rstrip().split('\t')
-  assert parts[1] == 'refs/heads/master'
+  assert parts[1] == 'refs/heads/main'
   return parts[0]
 
 

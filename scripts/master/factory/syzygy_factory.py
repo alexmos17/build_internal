@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Utility class to build the Syzygy master BuildFactory's.
+"""Utility class to build the Syzygy main BuildFactory's.
 
 Based on gclient_factory.py and adds Syzygy-specific steps."""
 
-from master.factory import gclient_factory
-from master.factory import syzygy_commands
+from main.factory import gclient_factory
+from main.factory import syzygy_commands
 
 import config
 
@@ -60,18 +60,18 @@ def ForceToMsvsBuildTool(options):
 
 
 class SyzygyFactory(gclient_factory.GClientFactory):
-  """Encapsulates data and methods common to the Syzygy master.cfg files."""
+  """Encapsulates data and methods common to the Syzygy main.cfg files."""
 
   def __init__(self, build_dir, target_platform=None):
     self.target_platform = target_platform
-    main = gclient_factory.GClientSolution(config.Master.syzygy_url + 'trunk',
+    main = gclient_factory.GClientSolution(config.Main.syzygy_url + 'trunk',
                                            name='src',
                                            custom_deps_file='DEPS.syzygy')
 
     custom_deps_list = [main]
-    if config.Master.syzygy_internal_url:
+    if config.Main.syzygy_internal_url:
       internal = gclient_factory.GClientSolution(
-                     config.Master.syzygy_internal_url,
+                     config.Main.syzygy_internal_url,
                      name='syzygy')
       custom_deps_list.append(internal)
 
@@ -79,7 +79,7 @@ class SyzygyFactory(gclient_factory.GClientFactory):
                                             target_platform=target_platform)
 
   def SyzygyFactory(self, target='release', clobber=False, tests=None,
-                    mode=None, slave_type='BuilderTester', options=None,
+                    mode=None, subordinate_type='BuilderTester', options=None,
                     compile_timeout=1200, build_url=None, project=None,
                     factory_properties=None, target_arch=None,
                     official_release=False):
@@ -126,7 +126,7 @@ class SyzygyFactory(gclient_factory.GClientFactory):
     return factory
 
   def SyzygyCoverageFactory(self, target='release', clobber=False, tests=None,
-                            mode=None, slave_type='BuilderTester', options=None,
+                            mode=None, subordinate_type='BuilderTester', options=None,
                             compile_timeout=1200, build_url=None, project=None,
                             factory_properties=None, target_arch=None):
     factory = self.BaseFactory(factory_properties=factory_properties)
@@ -150,12 +150,12 @@ class SyzygyFactory(gclient_factory.GClientFactory):
     return factory
 
   def SyzygySmokeTestFactory(self, target=None, clobber=False, tests=None,
-                             mode=None, slave_type='Tester',
+                             mode=None, subordinate_type='Tester',
                              options=None, compile_timeout=1200,
                              build_url=None, project=None,
                              factory_properties=None, target_arch=None):
     """Runs the smoke-test against the checked out version of the binaries."""
-    factory = self.BaseFactory(slave_type=slave_type,
+    factory = self.BaseFactory(subordinate_type=subordinate_type,
                                factory_properties=factory_properties)
     syzygy_cmd_obj = syzygy_commands.SyzygyCommands(factory,
                                                     target,

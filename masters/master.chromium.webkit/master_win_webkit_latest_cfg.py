@@ -2,16 +2,16 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import master_config
-from master.factory import chromium_factory
+from main import main_config
+from main.factory import chromium_factory
 
-import master_site_config
+import main_site_config
 
-ActiveMaster = master_site_config.ChromiumWebkit
+ActiveMain = main_site_config.ChromiumWebkit
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 F = helper.Factory
 T = helper.Triggerable
@@ -26,7 +26,7 @@ defaults['category'] = 'layout'
 ################################################################################
 
 # Archive location
-rel_archive = master_config.GetGSUtilUrl('chromium-build-transfer',
+rel_archive = main_config.GetGSUtilUrl('chromium-build-transfer',
                                          'WebKit Win Builder')
 
 #
@@ -41,7 +41,7 @@ B('WebKit Win Builder', 'f_webkit_win_rel',
   scheduler='global_scheduler', builddir='webkit-win-latest-rel',
   auto_reboot=False)
 F('f_webkit_win_rel', win().ChromiumFactory(
-    slave_type='Builder',
+    subordinate_type='Builder',
     build_url=rel_archive,
     options=['--build-tool=ninja', '--compiler=goma', '--', 'blink_tests'],
     factory_properties={
@@ -58,11 +58,11 @@ F('f_webkit_win_rel', win().ChromiumFactory(
 #
 B('WebKit XP', 'f_webkit_rel_tests', scheduler='s4_webkit_rel_trigger')
 F('f_webkit_rel_tests', win().ChromiumFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=rel_archive,
     tests=chromium_factory.blink_tests,
     factory_properties={
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'generate_gtest_json': True,
         'test_results_server': 'test-results.appspot.com',
         'blink_config': 'blink',
@@ -77,7 +77,7 @@ B('WebKit Win x64 Builder', 'f_webkit_win_rel_x64',
   scheduler='global_scheduler', builddir='webkit-win-latest-rel-x64',
   auto_reboot=False)
 F('f_webkit_win_rel_x64', win().ChromiumFactory(
-    slave_type='Builder',
+    subordinate_type='Builder',
     target='Release_x64',
     options=['--build-tool=ninja', '--compiler=goma', '--', 'blink_tests'],
     factory_properties={
@@ -98,7 +98,7 @@ F('f_webkit_win_oilpan_rel', win().ChromiumFactory(
         'additional_expectations': [
             ['third_party', 'WebKit', 'LayoutTests', 'OilpanExpectations' ],
         ],
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'blink_config': 'blink',
         'generate_gtest_json': True,
         'gclient_env': {
@@ -114,7 +114,7 @@ F('f_webkit_win_oilpan_rel', win().ChromiumFactory(
 ################################################################################
 
 # Archive location
-dbg_archive = master_config.GetGSUtilUrl('chromium-build-transfer',
+dbg_archive = main_config.GetGSUtilUrl('chromium-build-transfer',
                                          'WebKit Win Builder (dbg)')
 #
 # Triggerable scheduler for testers
@@ -128,7 +128,7 @@ B('WebKit Win Builder (dbg)', 'f_webkit_win_dbg', scheduler='global_scheduler',
   builddir='webkit-win-latest-dbg', auto_reboot=False)
 F('f_webkit_win_dbg', win().ChromiumFactory(
     target='Debug',
-    slave_type='Builder',
+    subordinate_type='Builder',
     build_url=dbg_archive,
     options=['--build-tool=ninja', '--compiler=goma', '--', 'blink_tests'],
     factory_properties={
@@ -148,11 +148,11 @@ B('WebKit Win7 (dbg)', 'f_webkit_dbg_tests',
     scheduler='s4_webkit_dbg_trigger')
 F('f_webkit_dbg_tests', win().ChromiumFactory(
     target='Debug',
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=dbg_archive,
     tests=chromium_factory.blink_tests,
     factory_properties={
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'generate_gtest_json': True,
         'test_results_server': 'test-results.appspot.com',
         'blink_config': 'blink',
@@ -168,7 +168,7 @@ F('f_webkit_win_oilpan_dbg', win().ChromiumFactory(
         'additional_expectations': [
             ['third_party', 'WebKit', 'LayoutTests', 'OilpanExpectations' ],
         ],
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'blink_config': 'blink',
         'generate_gtest_json': True,
         'gclient_env': {
@@ -186,7 +186,7 @@ B('WebKit Win x64 Builder (dbg)', 'f_webkit_win_dbg_x64',
   scheduler='global_scheduler', builddir='webkit-win-latest-dbg-x64',
   auto_reboot=False)
 F('f_webkit_win_dbg_x64', win().ChromiumFactory(
-    slave_type='Builder',
+    subordinate_type='Builder',
     target='Debug_x64',
     options=['--build-tool=ninja', '--compiler=goma', '--', 'blink_tests'],
     factory_properties={
@@ -197,5 +197,5 @@ F('f_webkit_win_dbg_x64', win().ChromiumFactory(
         },
     }))
 
-def Update(_config, _active_master, c):
+def Update(_config, _active_main, c):
   return helper.Update(c)

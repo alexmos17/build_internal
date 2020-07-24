@@ -17,7 +17,7 @@ def GenSteps(api):
   # useful for debugging git access issues that are reproducible only on bots.
   curl_trace_file = None
   if api.properties.get('use_curl_trace'):
-    curl_trace_file = api.path['slave_build'].join('curl_trace.log')
+    curl_trace_file = api.path['subordinate_build'].join('curl_trace.log')
 
   # You can use api.git.checkout to perform all the steps of a safe checkout.
   api.git.checkout(

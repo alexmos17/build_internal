@@ -16,7 +16,7 @@ def GenSteps(api):
   exes = api.m.properties.get('exes')
   compile_targets = api.m.properties.get('compile_targets')
 
-  api.path['checkout'] = api.path['slave_build']
+  api.path['checkout'] = api.path['subordinate_build']
   api.chromium.set_config('chromium')
   api.filter.does_patch_require_compile(exes=exes,
                                         compile_targets=compile_targets,

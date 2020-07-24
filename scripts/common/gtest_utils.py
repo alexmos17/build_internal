@@ -61,8 +61,8 @@ class GTestLogParser(object):
     # This regexp also matches SomeName.SomeTest/1, which should be harmless.
     test_name_regexp = r'((\w+/)?\w+\.\w+(/\d+)?)'
 
-    self._master_name_re = re.compile('\[Running for master: "([^"]*)"')
-    self.master_name = ''
+    self._main_name_re = re.compile('\[Running for main: "([^"]*)"')
+    self.main_name = ''
 
     self._test_name    = re.compile(test_name_regexp)
     self._test_start   = re.compile('\[\s+RUN\s+\] ' + test_name_regexp)
@@ -234,11 +234,11 @@ class GTestLogParser(object):
     # multiple times, so this will only show the most recent values (but they
     # should all be the same anyway).
 
-    # Is it a line listing the master name?
-    if not self.master_name:
-      results = self._master_name_re.match(line)
+    # Is it a line listing the main name?
+    if not self.main_name:
+      results = self._main_name_re.match(line)
       if results:
-        self.master_name = results.group(1)
+        self.main_name = results.group(1)
 
     results = self._run_test_cases_line.match(line)
     if results:
@@ -411,7 +411,7 @@ class GTestJSONParser(object):
   # of output that gums up the infrastructure.
   OUTPUT_SNIPPET_LINES_LIMIT = 5000
 
-  def __init__(self, mastername=None):
+  def __init__(self, mainname=None):
     self.json_file_path = None
     self.delete_json_file = False
 
@@ -424,7 +424,7 @@ class GTestJSONParser(object):
 
     self.parsing_errors = []
 
-    self.master_name = mastername
+    self.main_name = mainname
 
   def ProcessLine(self, line):
     # Deliberately do nothing - we parse out-of-band JSON summary

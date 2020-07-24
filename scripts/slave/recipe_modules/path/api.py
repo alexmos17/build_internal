@@ -6,8 +6,8 @@ import functools
 import os
 import tempfile
 
-from slave import recipe_api
-from slave import recipe_config_types
+from subordinate import recipe_api
+from subordinate import recipe_config_types
 
 
 def PathTostring(api, test):
@@ -99,7 +99,7 @@ class fake_path(object):
     path = self.normpath(path)
     if path[0] != '[':  # pragma: no cover
       # We should never really hit this, but simulate the effect.
-      return self.api.slave_build(path)
+      return self.api.subordinate_build(path)
     else:
       return path
 

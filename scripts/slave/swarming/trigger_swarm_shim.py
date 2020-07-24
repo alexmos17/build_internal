@@ -3,12 +3,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""This script acts as the liason between the master and the swarming_client
+"""This script acts as the liason between the main and the swarming_client
 code.
 
-This helps with master restarts and when swarming_client is updated. It helps
+This helps with main restarts and when swarming_client is updated. It helps
 support older versions of the client code, without having to complexify the
-master code.
+main code.
 """
 
 import optparse
@@ -19,13 +19,13 @@ import sys
 from common import chromium_utils
 from common import find_depot_tools  # pylint: disable=W0611
 
-from slave.swarming import swarming_utils
+from subordinate.swarming import swarming_utils
 
 # From depot tools/
 import fix_encoding
 
 
-def v0(client, swarming, isolate_server, tasks, task_prefix, slave_os):
+def v0(client, swarming, isolate_server, tasks, task_prefix, subordinate_os):
   """Handlers swarm_client/swarm_trigger_step.py.
 
   Compatible from to the oldest swarm_client code up to r219626.
@@ -35,7 +35,7 @@ def v0(client, swarming, isolate_server, tasks, task_prefix, slave_os):
     os.path.join(client, 'swarm_trigger_step.py'),
     '--swarm-url', swarming,
     '--data-server', isolate_server,
-    '--os_image', slave_os,
+    '--os_image', subordinate_os,
     '--test-name-prefix', task_prefix,
   ]
   for i in tasks:
@@ -48,7 +48,7 @@ def v0(client, swarming, isolate_server, tasks, task_prefix, slave_os):
 
 
 def v0_1(
-    client, swarming, isolate_server, priority, tasks, task_prefix, slave_os):
+    client, swarming, isolate_server, priority, tasks, task_prefix, subordinate_os):
   """Handles swarm_client/swarming.py starting r219798."""
   cmd = [
     sys.executable,
@@ -56,7 +56,7 @@ def v0_1(
     'trigger',
     '--swarming', swarming,
     '--isolate-server', isolate_server,
-    '--os', slave_os,
+    '--os', subordinate_os,
     '--task-prefix', task_prefix,
     '--priority', str(priority),
   ]
@@ -75,7 +75,7 @@ def v0_1(
 
 
 def v0_3(
-    client, swarming, isolate_server, priority, tasks, task_prefix, slave_os):
+    client, swarming, isolate_server, priority, tasks, task_prefix, subordinate_os):
   """Handles swarm_client/swarming.py starting 7c543276f08."""
   ret = 0
   for isolated_hash, test_name, shards, gtest_filter in tasks:
@@ -85,7 +85,7 @@ def v0_3(
       'trigger',
       '--swarming', swarming,
       '--isolate-server', isolate_server,
-      '--os', slave_os,
+      '--os', subordinate_os,
       '--priority', str(priority),
       '--shards', str(shards),
       '--task-name', task_prefix + test_name,
@@ -102,11 +102,11 @@ def v0_3(
   return ret
 
 
-def v0_4(client, swarming, isolate_server, priority, tasks, slave_os):
+def v0_4(client, swarming, isolate_server, priority, tasks, subordinate_os):
   """Handles swarm_client/swarming.py starting b39e8cf08c."""
   ret = 0
   for isolated_hash, test_name, shards, gtest_filter in tasks:
-    selected_os = swarming_utils.OS_MAPPING[slave_os]
+    selected_os = swarming_utils.OS_MAPPING[subordinate_os]
     task_name = '%s/%s/%s' % (test_name, selected_os, isolated_hash)
     cmd = [
       sys.executable,
@@ -133,25 +133,25 @@ def v0_4(client, swarming, isolate_server, priority, tasks, slave_os):
 
 
 def trigger(
-    client, swarming, isolate_server, priority, tasks, task_prefix, slave_os):
+    client, swarming, isolate_server, priority, tasks, task_prefix, subordinate_os):
   """Executes the proper handler based on the code layout and --version support.
   """
   if os.path.isfile(os.path.join(client, 'swarm_get_results.py')):
     # Oh, that's old. This can be removed on 2014-01-01 and replaced on hard
     # failure if swarming.py doesn't exist.
-    return v0(client, swarming, isolate_server, tasks, task_prefix, slave_os)
+    return v0(client, swarming, isolate_server, tasks, task_prefix, subordinate_os)
 
   version = swarming_utils.get_version(client)
   if version < (0, 3):
     return v0_1(
         client, swarming, isolate_server, priority, tasks, task_prefix,
-        slave_os)
+        subordinate_os)
   if version < (0, 4):
     return v0_3(
         client, swarming, isolate_server, priority, tasks, task_prefix,
-        slave_os)
+        subordinate_os)
   # It is not using <buildername>-<buildnumber>- anymore.
-  return v0_4(client, swarming, isolate_server, priority, tasks, slave_os)
+  return v0_4(client, swarming, isolate_server, priority, tasks, subordinate_os)
 
 
 def process_build_properties(options):
@@ -163,20 +163,20 @@ def process_build_properties(options):
   # target_os is not defined when using a normal builder, contrary to a
   # xx_swarm_triggered buildbot<->swarming builder, and it's not needed since
   # the OS match, it's defined in builder/tester configurations.
-  slave_os = options.build_properties.get('target_os', sys.platform)
+  subordinate_os = options.build_properties.get('target_os', sys.platform)
   priority = swarming_utils.build_to_priority(options.build_properties)
-  return task_prefix, slave_os, priority
+  return task_prefix, subordinate_os, priority
 
 
 def main():
-  """Note: this is solely to run the current master's code and can totally
+  """Note: this is solely to run the current main's code and can totally
   differ from the underlying script flags.
 
   To update these flags:
   - Update the following code to support both the previous flag and the new
     flag.
-  - Change scripts/master/factory/swarm_commands.py to pass the new flag.
-  - Restart all the masters using swarming.
+  - Change scripts/main/factory/swarm_commands.py to pass the new flag.
+  - Restart all the mains using swarming.
   - Remove the old flag from this code.
   """
   client = swarming_utils.find_client(os.getcwd())
@@ -195,11 +195,11 @@ def main():
     parser.error('Unsupported args: %s' % args)
 
   # Loads the other flags implicitly.
-  task_prefix, slave_os, priority = process_build_properties(options)
+  task_prefix, subordinate_os, priority = process_build_properties(options)
 
   return trigger(
       client, options.swarming, options.isolate_server, priority,
-      options.tasks, task_prefix, slave_os)
+      options.tasks, task_prefix, subordinate_os)
 
 
 if __name__ == '__main__':

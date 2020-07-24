@@ -3,15 +3,15 @@
 # found in the LICENSE file.
 
 
-from master import master_config
-from master.factory import annotator_factory
-from master.factory import chromium_factory
+from main import main_config
+from main.factory import annotator_factory
+from main.factory import chromium_factory
 
 m_annotator = annotator_factory.AnnotatorFactory()
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 F = helper.Factory
 
@@ -84,5 +84,5 @@ B('Android GN (dbg)', 'f_android_gn', scheduler='global_scheduler')
 F('f_android_gn_dbg', m_annotator.BaseFactory('chromium_gn'))
 
 
-def Update(_config, _active_master, c):
+def Update(_config, _active_main, c):
   return helper.Update(c)

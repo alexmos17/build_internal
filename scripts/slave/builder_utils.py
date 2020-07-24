@@ -9,7 +9,7 @@
 
 This module mocks out enough of a Buildbot build system to extract BuildSteps
 from builders. This is useful if you want to use these Buildsteps separate from
-a Buildbot master.
+a Buildbot main.
 """
 
 # pylint: disable=C0323,R0201
@@ -20,11 +20,11 @@ import sys
 
 from common import chromium_utils
 
-# slaves are currently set to buildbot 0.7, while masters to 0.8
-# these are required to override 0.7 and are necessary until slaves
+# subordinates are currently set to buildbot 0.7, while mains to 0.8
+# these are required to override 0.7 and are necessary until subordinates
 # have been transitioned to 0.8
 chromium_utils.AddThirdPartyLibToPath('buildbot_8_4p1', override=True)
-chromium_utils.AddThirdPartyLibToPath('buildbot_slave_8_4', override=True)
+chromium_utils.AddThirdPartyLibToPath('buildbot_subordinate_8_4', override=True)
 chromium_utils.AddThirdPartyLibToPath('twisted_10_2', override=True)
 chromium_utils.AddThirdPartyLibToPath('sqlalchemy_0_7_1', override=True)
 chromium_utils.AddThirdPartyLibToPath('sqlalchemy_migrate_0_7_1', override=True)
@@ -40,8 +40,8 @@ from buildbot.status import builder
 from buildbot.status.results import EXCEPTION
 from buildbot.status.results import FAILURE
 import buildbot.util
-from buildslave.commands import registry
-from buildslave.runprocess import shell_quote
+from buildsubordinate.commands import registry
+from buildsubordinate.runprocess import shell_quote
 from twisted.internet import defer
 from twisted.internet import reactor
 from twisted.python.reflect import accumulateClassList
@@ -98,23 +98,23 @@ class FakeRequest(object):
     return self.reason
 
 
-class FakeSlave(util.LocalAsRemote):
-  """A mocked combination of BuildSlave and SlaveBuilder. Controls the build
+class FakeSubordinate(util.LocalAsRemote):
+  """A mocked combination of BuildSubordinate and SubordinateBuilder. Controls the build
   by kicking off steps and receiving messages as those steps run. See
   http://buildbot.net/buildbot/docs/0.7.12/reference/buildbot.slave.bot.
-  SlaveBuilder-class.html and http://buildbot.net/buildbot/docs/0.8.3/
-  reference/buildbot.buildslave.BuildSlave-class.html for reference."""
+  SubordinateBuilder-class.html and http://buildbot.net/buildbot/docs/0.8.3/
+  reference/buildbot.buildsubordinate.BuildSubordinate-class.html for reference."""
 
-  def __init__(self, builddir, slavebuilddir, slavename):
-    self.slave = self
+  def __init__(self, builddir, subordinatebuilddir, subordinatename):
+    self.subordinate = self
     self.properties = Properties()
-    self.slave_basedir = '.'
-    self.basedir = '.'  # this must be '.' since I combine slavebuilder
-                        # and buildslave
+    self.subordinate_basedir = '.'
+    self.basedir = '.'  # this must be '.' since I combine subordinatebuilder
+                        # and buildsubordinate
     self.path_module = namedModule('posixpath')
-    self.slavebuilddir = slavebuilddir or builddir
+    self.subordinatebuilddir = subordinatebuilddir or builddir
     self.builddir = builddir
-    self.slavename = slavename
+    self.subordinatename = subordinatename
     self.usePTY = True
     self.updateactions = []
     self.unicode_encoding = 'utf8'
@@ -124,7 +124,7 @@ class FakeSlave(util.LocalAsRemote):
   def addUpdateAction(self, action):
     self.updateactions.append(action)
 
-  def getSlaveCommandVersion(self, command, oldversion=None):
+  def getSubordinateCommandVersion(self, command, oldversion=None):
     return command
 
   def sendUpdate(self, data):
@@ -132,14 +132,14 @@ class FakeSlave(util.LocalAsRemote):
       action(data)
     self.remoteStep.remote_update([[data, 0]])
 
-  def messageReceivedFromSlave(self):
+  def messageReceivedFromSubordinate(self):
     return None
 
   def sync_startCommand(self, stepref, stepId, command, cmdargs):
     try:
       cmdfactory = registry.getFactory(command)
     except KeyError:
-      raise UnknownCommand("unrecognized SlaveCommand '%s'" % command)
+      raise UnknownCommand("unrecognized SubordinateCommand '%s'" % command)
 
     self.command = cmdfactory(self, stepId, cmdargs)
 
@@ -150,7 +150,7 @@ class FakeSlave(util.LocalAsRemote):
 
 
 class UnknownCommand(pb.Error):
-  """Represent an unknown slave command."""
+  """Represent an unknown subordinate command."""
   pass
 
 
@@ -199,7 +199,7 @@ def startNextStep(steps, run_status, prog_args):
 
   print >>sys.stderr, 'performing step: ' + s.name,
   s.step_status.stepStarted()
-  d = defer.maybeDeferred(s.startStep, s.buildslave)
+  d = defer.maybeDeferred(s.startStep, s.buildsubordinate)
   d.addCallback(lambda x: checkStep(x, steps,
                                     run_status, prog_args))
   d.addErrback(lambda x: buildException(run_status, x))
@@ -255,25 +255,25 @@ def ListSteps(my_factory):
   return steps
 
 
-class FakeMaster:
-  def __init__(self, mastername):
+class FakeMain:
+  def __init__(self, mainname):
     self.db = None
-    self.master_name = mastername
-    self.master_incarnation = None
+    self.main_name = mainname
+    self.main_incarnation = None
 
 
-class FakeBotmaster:
-  def __init__(self, mastername, properties=Properties()):
-    self.master = FakeMaster(mastername)
+class FakeBotmain:
+  def __init__(self, mainname, properties=Properties()):
+    self.main = FakeMain(mainname)
     self.parent = self
     self.properties = properties
 
 
-def process_steps(steplist, build, buildslave, build_status, basedir):
-  """Attach build and buildslaves to each step."""
+def process_steps(steplist, build, buildsubordinate, build_status, basedir):
+  """Attach build and buildsubordinates to each step."""
   for step in steplist:
     step.setBuild(build)
-    step.setBuildSlave(buildslave)
+    step.setBuildSubordinate(buildsubordinate)
     step.setStepStatus(build_status.addStepWithName(step.name))
     step.setDefaultWorkdir(os.path.join(basedir, 'build'))
     if not hasattr(step, 'workdir') or not step.workdir:
@@ -343,11 +343,11 @@ def GetCommands(steplist):
   return commands
 
 
-def MockBuild(my_builder, buildsetup, mastername, slavename, basepath=None,
-              build_properties=None, slavedir=None):
+def MockBuild(my_builder, buildsetup, mainname, subordinatename, basepath=None,
+              build_properties=None, subordinatedir=None):
   """Given a builder object and configuration, mock a Buildbot setup around it.
 
-  This sets up a mock BuildMaster, BuildSlave, Build, BuildStatus, and all other
+  This sets up a mock BuildMain, BuildSubordinate, Build, BuildStatus, and all other
   superstructure required for BuildSteps inside the provided builder to render
   properly. These BuildSteps are returned to the user in an array. It
   additionally returns the build object (in order to get its properties if
@@ -356,7 +356,7 @@ def MockBuild(my_builder, buildsetup, mastername, slavename, basepath=None,
   buildsetup is passed straight into the FakeSource's init method and
   contains sourcestamp information (revision, branch, etc).
 
-  basepath is the directory of the build (what goes under build/slave/, for
+  basepath is the directory of the build (what goes under build/subordinate/, for
   example 'Chromium_Linux_Builder'. It is nominally inferred from the builder
   name, but it can be overridden. This is useful when pointing the buildrunner
   at a different builder than what it's running under.
@@ -372,18 +372,18 @@ def MockBuild(my_builder, buildsetup, mastername, slavename, basepath=None,
   safename = buildbot.util.safeTranslate(my_builder['name'])
 
   my_builder.setdefault('builddir', safename)
-  my_builder.setdefault('slavebuilddir', my_builder['builddir'])
+  my_builder.setdefault('subordinatebuilddir', my_builder['builddir'])
 
 
   workdir_root = None
-  if not slavedir:
-    workdir_root = os.path.join(SCRIPT_DIR, '..', '..', 'slave',
-                                my_builder['slavebuilddir'])
+  if not subordinatedir:
+    workdir_root = os.path.join(SCRIPT_DIR, '..', '..', 'subordinate',
+                                my_builder['subordinatebuilddir'])
 
   if not basepath: basepath = safename
-  if not slavedir: slavedir = os.path.join(SCRIPT_DIR,
-                                           '..', '..', 'slave')
-  basedir = os.path.join(slavedir, basepath)
+  if not subordinatedir: subordinatedir = os.path.join(SCRIPT_DIR,
+                                           '..', '..', 'subordinate')
+  basedir = os.path.join(subordinatedir, basepath)
   build.basedir = basedir
   if not workdir_root:
     workdir_root = basedir
@@ -398,8 +398,8 @@ def MockBuild(my_builder, buildsetup, mastername, slavename, basepath=None,
   build_status = build_module.BuildStatus(builderstatus, buildnumber)
 
   build_status.setProperty('blamelist', [], 'Build')
-  build_status.setProperty('mastername', mastername, 'Build')
-  build_status.setProperty('slavename', slavename, 'Build')
+  build_status.setProperty('mainname', mainname, 'Build')
+  build_status.setProperty('subordinatename', subordinatename, 'Build')
   build_status.setProperty('gtest_filter', [], 'Build')
   build_status.setProperty('extra_args', [], 'Build')
   build_status.setProperty('build_id', buildnumber, 'Build')
@@ -407,13 +407,13 @@ def MockBuild(my_builder, buildsetup, mastername, slavename, basepath=None,
   # if build_properties are passed in, overwrite the defaults above:
   buildprops = Properties()
   if build_properties:
-    buildprops.update(build_properties, 'Botmaster')
-  mybuilder.setBotmaster(FakeBotmaster(mastername, buildprops))
+    buildprops.update(build_properties, 'Botmain')
+  mybuilder.setBotmain(FakeBotmain(mainname, buildprops))
 
-  buildslave = FakeSlave(safename, my_builder.get('slavebuilddir'), slavename)
+  buildsubordinate = FakeSubordinate(safename, my_builder.get('subordinatebuilddir'), subordinatename)
   build.build_status = build_status
-  build.setupSlaveBuilder(buildslave)
+  build.setupSubordinateBuilder(buildsubordinate)
   build.setupProperties()
-  process_steps(steplist, build, buildslave, build_status, workdir_root)
+  process_steps(steplist, build, buildsubordinate, build_status, workdir_root)
 
   return steplist, build

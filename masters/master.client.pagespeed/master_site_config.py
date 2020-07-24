@@ -2,15 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
-class PageSpeed(Master.Master3):
+class PageSpeed(Main.Main3):
   project_name = 'PageSpeed'
-  master_port = 8038
-  slave_port = 8138
-  master_port_alt = 8238
+  main_port = 8038
+  subordinate_port = 8138
+  main_port_alt = 8238
   buildbot_url = 'http://build.chromium.org/p/client.pagespeed/'
   tree_closing_notification_recipients = [
       'page-speed-codereview@googlegroups.com']

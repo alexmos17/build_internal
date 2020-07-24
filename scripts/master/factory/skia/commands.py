@@ -8,7 +8,7 @@ This is based on commands.py and adds skia-specific commands."""
 
 from buildbot.steps import shell
 
-from master.factory import commands
+from main.factory import commands
 
 class SkiaCommands(commands.FactoryCommands):
 
@@ -18,7 +18,7 @@ class SkiaCommands(commands.FactoryCommands):
 
     factory: a BaseFactory
     configuration: 'Debug' or 'Release'
-    workdir: string indicating path within slave directory
+    workdir: string indicating path within subordinate directory
     target_arch: string such as 'x64'
     default_timeout: default timeout for each command, in seconds
     target_platform: a string such as skia_factory.TARGET_PLATFORM_LINUX,
@@ -61,9 +61,9 @@ class SkiaCommands(commands.FactoryCommands):
     # TODO(epoger): this should use self._script_dir instead of the manually
     # created path below, but I had trouble with that and didn't want it to
     # block progress for now.
-    slave_script_dir = self.PathJoin('..', '..', '..', '..', 'scripts', 'slave')
+    subordinate_script_dir = self.PathJoin('..', '..', '..', '..', 'scripts', 'subordinate')
     path_to_upload_script = self.PathJoin(
-        slave_script_dir, 'upload_to_bucket.py')
+        subordinate_script_dir, 'upload_to_bucket.py')
     cmd = 'python %s --source_filepath=%s --dest_gsbase=%s' % (
         path_to_upload_script, source_filepath, dest_gsbase)
     if not timeout:
@@ -84,9 +84,9 @@ class SkiaCommands(commands.FactoryCommands):
     # TODO(epoger): this should use self._script_dir instead of the manually
     # created path below, but I had trouble with that and didn't want it to
     # block progress for now.
-    slave_script_dir = self.PathJoin('..', '..', '..', '..', 'scripts', 'slave')
+    subordinate_script_dir = self.PathJoin('..', '..', '..', '..', 'scripts', 'subordinate')
     path_to_upload_script = self.PathJoin(
-        slave_script_dir, 'skia', 'merge_into_svn.py')
+        subordinate_script_dir, 'skia', 'merge_into_svn.py')
     cmd = ['python', path_to_upload_script,
            '--source_dir_path', source_dir_path,
            '--dest_svn_url', dest_svn_url,

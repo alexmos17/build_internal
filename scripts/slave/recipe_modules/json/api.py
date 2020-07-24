@@ -9,9 +9,9 @@ import json
 
 from cStringIO import StringIO
 
-from slave import recipe_api
-from slave import recipe_util
-from slave import recipe_config_types
+from subordinate import recipe_api
+from subordinate import recipe_util
+from subordinate import recipe_config_types
 
 from .util import GTestResults, TestResults
 

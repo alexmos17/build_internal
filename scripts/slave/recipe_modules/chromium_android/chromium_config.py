@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave.recipe_config_types import Path
-from slave import recipe_config
+from subordinate.recipe_config_types import Path
+from subordinate import recipe_config
 
 from RECIPE_MODULES.chromium import CONFIG_CTX
 

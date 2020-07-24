@@ -14,7 +14,7 @@ class Channel(object):
     self.standalone_deps_path = '/' + branch + '/deps/standalone.deps'
     self.dartium_deps_path = '/' + branch + '/deps/dartium.deps'
 
-# The channel names are replicated in the slave.cfg files for all
+# The channel names are replicated in the subordinate.cfg files for all
 # dart waterfalls. If you change anything here please also change it there.
 CHANNELS = [
   Channel('be', 'branches/bleeding_edge', 0, '', 4),

@@ -730,7 +730,7 @@ class IrcStatusBot(irc.IRCClient):
         @type  channels: list of dictionaries
         @param channels: the bot will maintain a presence in these channels
         @type  status: L{buildbot.status.builder.Status}
-        @param status: the build master's Status object, through which the
+        @param status: the build main's Status object, through which the
                        bot retrieves all status information
         @type  noticeOnChannel: boolean
         @param noticeOnChannel: Defaults to False. If True, error messages
@@ -741,7 +741,7 @@ class IrcStatusBot(irc.IRCClient):
         self.channels = channels
         self.password = password
         self.status = status
-        self.master = status.master
+        self.main = status.main
         self.categories = categories
         self.notify_events = notify_events
         self.counter = 0
@@ -872,7 +872,7 @@ class IrcStatusFactory(ThrottledClientFactory):
     def shutdown(self):
         self.shuttingDown = True
         if self.p:
-            self.p.quit("buildmaster reconfigured: bot disconnecting")
+            self.p.quit("buildmain reconfigured: bot disconnecting")
 
     def buildProtocol(self, address):
         p = self.protocol(self.nickname, self.password,

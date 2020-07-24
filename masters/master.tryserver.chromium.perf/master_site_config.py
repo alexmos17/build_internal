@@ -2,15 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
-class ChromiumPerfTryServer(Master.Master4):
+class ChromiumPerfTryServer(Main.Main4):
   project_name = 'Chromium Perf Try Server'
-  master_port = 8041
-  slave_port = 8141
-  master_port_alt = 8241
+  main_port = 8041
+  subordinate_port = 8141
+  main_port_alt = 8241
   try_job_port = 8341
   # Select tree status urls and codereview location.
   reply_to = 'chrome-troopers+tryserver@google.com'

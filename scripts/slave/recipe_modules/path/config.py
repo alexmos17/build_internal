@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave.recipe_config import config_item_context, ConfigGroup, Dict, Static
-from slave.recipe_config_types import Path
+from subordinate.recipe_config import config_item_context, ConfigGroup, Dict, Static
+from subordinate.recipe_config_types import Path
 
 def BaseConfig(CURRENT_WORKING_DIR, TEMP_DIR, **_kwargs):
   assert CURRENT_WORKING_DIR[0].endswith(('\\', '/'))
@@ -21,8 +21,8 @@ def BaseConfig(CURRENT_WORKING_DIR, TEMP_DIR, **_kwargs):
 
 VAR_TEST_MAP = {
   'CURRENT_WORKING_DIR': (
-    ['/', 'b', 'build', 'slave', 'fake_slave', 'build'],
-    ['E:\\', 'build', 'slave', 'fake_slave', 'build'],
+    ['/', 'b', 'build', 'subordinate', 'fake_subordinate', 'build'],
+    ['E:\\', 'build', 'subordinate', 'fake_subordinate', 'build'],
   ),
   'TEMP_DIR': (
     ['/', 'fake_tmp'],
@@ -46,7 +46,7 @@ def BASE(c):
 @config_ctx()
 def buildbot(c):
   c.base_paths['root'] = c.CURRENT_WORKING_DIR[:-4]
-  c.base_paths['slave_build'] = c.CURRENT_WORKING_DIR
+  c.base_paths['subordinate_build'] = c.CURRENT_WORKING_DIR
   for token in ('build_internal', 'build', 'depot_tools'):
     c.base_paths[token] = c.base_paths['root'] + (token,)
   c.dynamic_paths['checkout'] = None

@@ -6,16 +6,16 @@ from buildbot.changes import svnpoller
 
 from common import chromium_utils
 
-from master import build_utils
+from main import build_utils
 
 def SyzygyFileSplitter(path):
   """split_file for Syzygy."""
   projects = ['trunk']
   return build_utils.SplitPath(projects, path)
 
-def Update(config, active_master, c):
-  syzygy_url = config.Master.syzygy_url
-  syzygy_revlinktmpl = config.Master.googlecode_revlinktmpl % ('sawbuck', '%s')
+def Update(config, active_main, c):
+  syzygy_url = config.Main.syzygy_url
+  syzygy_revlinktmpl = config.Main.googlecode_revlinktmpl % ('sawbuck', '%s')
 
   syzygy_poller = svnpoller.SVNPoller(svnurl=syzygy_url,
                                       svnbin=chromium_utils.SVN_BIN,

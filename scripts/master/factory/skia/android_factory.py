@@ -2,11 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Utility class to build the Skia master BuildFactory's for Android buildbots.
+"""Utility class to build the Skia main BuildFactory's for Android buildbots.
 
 Overrides SkiaFactory with any Android-specific steps."""
 
-from master.factory.skia import factory as skia_factory
+from main.factory.skia import factory as skia_factory
 
 class AndroidFactory(skia_factory.SkiaFactory):
   """Overrides for Android builds."""

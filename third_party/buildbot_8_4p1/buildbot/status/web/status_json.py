@@ -76,13 +76,13 @@ EXAMPLES = """\
     - Two last builds on '<A_BUILDER>' builder.
   - /json/builders/<A_BUILDER>/builds?select=-1/source_stamp/changes&select=-2/source_stamp/changes
     - Changes of the two last builds on '<A_BUILDER>' builder.
-  - /json/builders/<A_BUILDER>/slaves
-    - Slaves associated to this builder.
-  - /json/builders/<A_BUILDER>?select=&select=slaves
-    - Builder information plus details information about its slaves. Neat eh?
-  - /json/slaves/<A_SLAVE>
-    - A specific slave.
-  - /json?select=slaves/<A_SLAVE>/&select=project&select=builders/<A_BUILDER>/builds/<A_BUILD>
+  - /json/builders/<A_BUILDER>/subordinates
+    - Subordinates associated to this builder.
+  - /json/builders/<A_BUILDER>?select=&select=subordinates
+    - Builder information plus details information about its subordinates. Neat eh?
+  - /json/subordinates/<A_SLAVE>
+    - A specific subordinate.
+  - /json?select=subordinates/<A_SLAVE>/&select=project&select=builders/<A_BUILDER>/builds/<A_BUILD>
     - A selection of random unrelated stuff as an random example. :)
 """
 
@@ -392,7 +392,7 @@ class BuilderJsonResource(JsonResource):
         JsonResource.__init__(self, status)
         self.builder_status = builder_status
         self.putChild('builds', BuildsJsonResource(status, builder_status))
-        self.putChild('slaves', BuilderSlavesJsonResources(status,
+        self.putChild('subordinates', BuilderSubordinatesJsonResources(status,
                                                            builder_status))
         self.putChild(
                 'pendingBuilds',
@@ -404,7 +404,7 @@ class BuilderJsonResource(JsonResource):
 
 
 class BuildersJsonResource(JsonResource):
-    help = """List of all the builders defined on a master.
+    help = """List of all the builders defined on a main.
 """
     pageTitle = 'Builders'
 
@@ -416,18 +416,18 @@ class BuildersJsonResource(JsonResource):
                                               status.getBuilder(builder_name)))
 
 
-class BuilderSlavesJsonResources(JsonResource):
-    help = """Describe the slaves attached to a single builder.
+class BuilderSubordinatesJsonResources(JsonResource):
+    help = """Describe the subordinates attached to a single builder.
 """
-    pageTitle = 'BuilderSlaves'
+    pageTitle = 'BuilderSubordinates'
 
     def __init__(self, status, builder_status):
         JsonResource.__init__(self, status)
         self.builder_status = builder_status
-        for slave_name in self.builder_status.slavenames:
-            self.putChild(slave_name,
-                          SlaveJsonResource(status,
-                                            self.status.getSlave(slave_name)))
+        for subordinate_name in self.builder_status.subordinatenames:
+            self.putChild(subordinate_name,
+                          SubordinateJsonResource(status,
+                                            self.status.getSubordinate(subordinate_name)))
 
 
 class BuildJsonResource(JsonResource):
@@ -593,7 +593,7 @@ class ChangesJsonResource(JsonResource):
     def getChild(self, path, request):
         # Dynamic childs.
         if isinstance(path, int) or _IS_INT.match(path):
-            change = self.status.master.getChange(int(path))
+            change = self.status.main.getChange(int(path))
             number = str(change.number)
             child = ChangeJsonResource(self.status, change)
             self.putChild(number, child)
@@ -604,10 +604,10 @@ class ChangesJsonResource(JsonResource):
     def asDict(self, request):
         """Don't throw an exception when there is no child."""
         max = int(RequestArg(request, 'max', 100))
-        d = self.status.master.db.changes.getRecentChanges(max)
+        d = self.status.main.db.changes.getRecentChanges(max)
         def reify(chdicts):
             return defer.gatherResults(
-                [changes.Change.fromChdict(self.status.master, chdict)
+                [changes.Change.fromChdict(self.status.main, chdict)
                  for chdict in chdicts])
         d.addCallback(reify)
         wfd = defer.waitForDeferred(d)
@@ -625,7 +625,7 @@ class ChangeSourcesJsonResource(JsonResource):
         result = {}
         n = 0
         for c in self.status.getChangeSources():
-            # buildbot.changes.changes.ChangeMaster
+            # buildbot.changes.changes.ChangeMain
             change = {}
             change['description'] = c.describe()
             result[n] = change
@@ -642,15 +642,15 @@ class ProjectJsonResource(JsonResource):
         return self.status.asDict()
 
 
-class SlaveJsonResource(JsonResource):
-    help = """Describe a slave.
+class SubordinateJsonResource(JsonResource):
+    help = """Describe a subordinate.
 """
-    pageTitle = 'Slave'
+    pageTitle = 'Subordinate'
 
-    def __init__(self, status, slave_status):
+    def __init__(self, status, subordinate_status):
         JsonResource.__init__(self, status)
-        self.slave_status = slave_status
-        self.name = self.slave_status.getName()
+        self.subordinate_status = subordinate_status
+        self.name = self.subordinate_status.getName()
         self.builders = None
 
     def getBuilders(self):
@@ -658,11 +658,11 @@ class SlaveJsonResource(JsonResource):
             # Figure out all the builders to which it's attached
             self.builders = []
             for builderName in self.status.getBuilderNames():
-                if self.name in self.status.getBuilder(builderName).slavenames:
+                if self.name in self.status.getBuilder(builderName).subordinatenames:
                     self.builders.append(builderName)
         return self.builders
 
-    def getSlaveBuildMap(self, buildcache, buildercache):
+    def getSubordinateBuildMap(self, buildcache, buildercache):
         for builderName in self.getBuilders():
             if builderName not in buildercache:
                 buildercache.add(builderName)
@@ -675,8 +675,8 @@ class SlaveJsonResource(JsonResource):
                     if not build_status or not build_status.isFinished():
                         # If not finished, it will appear in runningBuilds.
                         break
-                    slave = buildcache[build_status.getSlavename()]
-                    slave.setdefault(builderName, []).append(
+                    subordinate = buildcache[build_status.getSubordinatename()]
+                    subordinate.setdefault(builderName, []).append(
                             build_status.getNumber())
         return buildcache[self.name]
 
@@ -685,32 +685,32 @@ class SlaveJsonResource(JsonResource):
             request.custom_data = {}
         if 'buildcache' not in request.custom_data:
             # buildcache is used to cache build information across multiple
-            # invocations of SlaveJsonResource. It should be set to an empty
+            # invocations of SubordinateJsonResource. It should be set to an empty
             # collections.defaultdict(dict).
             request.custom_data['buildcache'] = collections.defaultdict(dict)
 
             # Tracks which builders have been stored in the buildcache.
             request.custom_data['buildercache'] = set()
 
-        results = self.slave_status.asDict()
+        results = self.subordinate_status.asDict()
         # Enhance it by adding more information.
-        results['builders'] = self.getSlaveBuildMap(
+        results['builders'] = self.getSubordinateBuildMap(
                 request.custom_data['buildcache'],
                 request.custom_data['buildercache'])
         return results
 
 
-class SlavesJsonResource(JsonResource):
-    help = """List the registered slaves.
+class SubordinatesJsonResource(JsonResource):
+    help = """List the registered subordinates.
 """
-    pageTitle = 'Slaves'
+    pageTitle = 'Subordinates'
 
     def __init__(self, status):
         JsonResource.__init__(self, status)
-        for slave_name in status.getSlaveNames():
-            self.putChild(slave_name,
-                          SlaveJsonResource(status,
-                                            status.getSlave(slave_name)))
+        for subordinate_name in status.getSubordinateNames():
+            self.putChild(subordinate_name,
+                          SubordinateJsonResource(status,
+                                            status.getSubordinate(subordinate_name)))
 
 
 class SourceStampJsonResource(JsonResource):
@@ -732,7 +732,7 @@ class SourceStampJsonResource(JsonResource):
         return self.source_stamp.asDict()
 
 class MetricsJsonResource(JsonResource):
-    help = """Master metrics.
+    help = """Main metrics.
 """
     title = "Metrics"
 
@@ -750,7 +750,7 @@ class JsonStatusResource(JsonResource):
     """Retrieves all json data."""
     help = """JSON status
 
-Root page to give a fair amount of information in the current buildbot master
+Root page to give a fair amount of information in the current buildbot main
 status. You may want to use a child instead to reduce the load on the server.
 
 For help on any sub directory, use url /child/help
@@ -764,7 +764,7 @@ For help on any sub directory, use url /child/help
         self.putChild('changes', ChangesJsonResource(status, None))
         self.putChild('change_sources', ChangeSourcesJsonResource(status))
         self.putChild('project', ProjectJsonResource(status))
-        self.putChild('slaves', SlavesJsonResource(status))
+        self.putChild('subordinates', SubordinatesJsonResource(status))
         self.putChild('metrics', MetricsJsonResource(status))
         # This needs to be called before the first HelpResource().body call.
         self.hackExamples()
@@ -789,7 +789,7 @@ For help on any sub directory, use url /child/help
         build = builder.getBuild(-1)
         if build:
             EXAMPLES = EXAMPLES.replace('<A_BUILD>', str(build.getNumber()))
-        if builder.slavenames:
-            EXAMPLES = EXAMPLES.replace('<A_SLAVE>', builder.slavenames[0])
+        if builder.subordinatenames:
+            EXAMPLES = EXAMPLES.replace('<A_SLAVE>', builder.subordinatenames[0])
 
 # vim: set ts=4 sts=4 sw=4 et:

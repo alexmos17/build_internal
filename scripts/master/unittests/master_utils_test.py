@@ -3,20 +3,20 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Source file for master_utils testcases."""
+"""Source file for main_utils testcases."""
 
 
 import unittest
 
 import test_env  # pylint: disable=W0611
 
-from master import master_utils
+from main import main_utils
 
 
-class MasterUtilsTest(unittest.TestCase):
+class MainUtilsTest(unittest.TestCase):
 
   def testPartition(self):
-    partitions = master_utils.Partition([(1, 'a'),
+    partitions = main_utils.Partition([(1, 'a'),
                                          (2, 'b'),
                                          (3, 'c'),
                                          ], 2)

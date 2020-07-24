@@ -3,7 +3,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""This allows easy execution of a recipe (scripts/slave/recipes, etc.)
+"""This allows easy execution of a recipe (scripts/subordinate/recipes, etc.)
 without buildbot.
 
 This is currently useful for testing recipes locally while developing them.
@@ -33,7 +33,7 @@ This would execute the run_presubmit recipe, passing
 
 This script can be run from any directory.
 
-See scripts/slave/annotated_run.py for more information about recipes.
+See scripts/subordinate/annotated_run.py for more information about recipes.
 """
 
 import argparse
@@ -45,10 +45,10 @@ import sys
 
 SCRIPT_PATH = os.path.abspath(os.path.dirname(__file__))
 ROOT_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, os.pardir, os.pardir))
-SLAVE_DIR = os.path.join(ROOT_PATH, 'slave', 'fake_slave', 'build')
+SLAVE_DIR = os.path.join(ROOT_PATH, 'subordinate', 'fake_subordinate', 'build')
 
 RUNIT = os.path.join(SCRIPT_PATH, 'runit.py')
-ANNOTATED_RUN = os.path.join(ROOT_PATH, 'scripts', 'slave', 'annotated_run.py')
+ANNOTATED_RUN = os.path.join(ROOT_PATH, 'scripts', 'subordinate', 'annotated_run.py')
 
 USAGE = """
 %(prog)s <recipe_name [<property=value>*]

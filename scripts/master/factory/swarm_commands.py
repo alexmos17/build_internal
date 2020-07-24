@@ -9,8 +9,8 @@ This is based on commands.py and adds swarm-specific commands."""
 from buildbot.steps import source
 from twisted.python import log
 
-from master import chromium_step
-from master.factory import commands
+from main import chromium_step
+from main.factory import commands
 
 import config
 
@@ -46,7 +46,7 @@ class SwarmCommands(commands.FactoryCommands):
     """Checks out swarming_client so it can be used at the right revision."""
     # Emulate the path of a src/DEPS checkout, to keep things simpler.
     relpath = 'build/src/tools/swarming_client'
-    url = config.Master.git_server_url + '/external/swarming.client'
+    url = config.Main.git_server_url + '/external/swarming.client'
     self._factory.addStep(
         SwarmingClientGIT,
         repourl=url,
@@ -79,7 +79,7 @@ class SwarmCommands(commands.FactoryCommands):
       return
 
     isolated_file = test_name + '.isolated'
-    slave_script_path = self.PathJoin(
+    subordinate_script_path = self.PathJoin(
         self._script_dir, 'swarming', 'isolate_shim.py')
 
     args = ['run', '--isolated', isolated_file, '--', '--no-cr']
@@ -90,7 +90,7 @@ class SwarmCommands(commands.FactoryCommands):
         '--pass-target',
         ]
 
-    command = self.GetPythonTestCommand(slave_script_path, arg_list=args,
+    command = self.GetPythonTestCommand(subordinate_script_path, arg_list=args,
                                         wrapper_args=wrapper_args)
     self.AddTestStep(chromium_step.AnnotatedCommand,
                      test_name,

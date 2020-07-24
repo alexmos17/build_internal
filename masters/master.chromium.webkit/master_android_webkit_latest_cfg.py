@@ -3,16 +3,16 @@
 # found in the LICENSE file.
 
 
-from master import master_config
-from master.factory import chromium_factory
+from main import main_config
+from main.factory import chromium_factory
 
-import master_site_config
+import main_site_config
 
-ActiveMaster = master_site_config.ChromiumWebkit
+ActiveMain = main_site_config.ChromiumWebkit
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 F = helper.Factory
 T = helper.Triggerable
@@ -33,7 +33,7 @@ defaults['category'] = 'layout'
 #
 T('android_rel_trigger')
 
-android_rel_archive = master_config.GetGSUtilUrl(
+android_rel_archive = main_config.GetGSUtilUrl(
     'chromium-android', 'webkit_latest_rel')
 #
 # Android Rel Builder
@@ -55,12 +55,12 @@ F('f_webkit_android_tests',
     annotation_script='src/build/android/buildbot/bb_run_bot.py',
     factory_properties={
         'android_bot_id': 'webkit-latest-webkit-tests-rel',
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'build_url': android_rel_archive,
         'generate_gtest_json': True,
         'test_results_server': 'test-results.appspot.com',
         'blink_config': 'blink',
         }))
 
-def Update(_config, _active_master, c):
+def Update(_config, _active_main, c):
   return helper.Update(c)

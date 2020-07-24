@@ -5,7 +5,7 @@
 import sys
 import platform
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 
 def norm_plat(plat):

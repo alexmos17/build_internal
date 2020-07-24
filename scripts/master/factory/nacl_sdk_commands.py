@@ -6,8 +6,8 @@
 
 Contains the Native Client SDK specific commands. Based on commands.py"""
 
-from master import chromium_step
-from master.factory import commands
+from main import chromium_step
+from main.factory import commands
 
 
 class NativeClientSDKCommands(commands.FactoryCommands):
@@ -22,7 +22,7 @@ class NativeClientSDKCommands(commands.FactoryCommands):
     # Where to point waterfall links for builds and test results.
     self._archive_url = 'http://build.chromium.org/f/client'
 
-    # Where the slave scripts are.
+    # Where the subordinate scripts are.
     self._private_script_dir = self.PathJoin(self._script_dir, '..', 'private')
 
     self._build_dir = self.PathJoin('build', build_dir)

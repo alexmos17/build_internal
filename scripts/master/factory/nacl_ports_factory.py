@@ -6,16 +6,16 @@
 
 Based on gclient_factory.py."""
 
-from master.factory import gclient_factory
-from master.factory import nacl_ports_commands
+from main.factory import gclient_factory
+from main.factory import nacl_ports_commands
 
 import config
 
 
 class NativeClientPortsFactory(gclient_factory.GClientFactory):
-  """Encapsulates data and methods common to the naclports master.cfg files."""
+  """Encapsulates data and methods common to the naclports main.cfg files."""
 
-  DEFAULT_TARGET_PLATFORM = config.Master.default_platform
+  DEFAULT_TARGET_PLATFORM = config.Main.default_platform
 
   # A map used to skip dependencies when a test is not run.
   # The map key is the test name. The map value is an array containing the
@@ -30,7 +30,7 @@ class NativeClientPortsFactory(gclient_factory.GClientFactory):
                alternate_url=None, name=None):
     solutions = []
     self.target_platform = target_platform
-    nacl_ports_url = config.Master.nacl_ports_url
+    nacl_ports_url = config.Main.nacl_ports_url
     if alternate_url:
       nacl_ports_url = alternate_url
     main = gclient_factory.GClientSolution(
@@ -42,7 +42,7 @@ class NativeClientPortsFactory(gclient_factory.GClientFactory):
     gclient_factory.GClientFactory.__init__(self, build_dir, solutions,
                                             target_platform=target_platform)
 
-  def NativeClientPortsFactory(self, slave_type='BuilderTester',
+  def NativeClientPortsFactory(self, subordinate_type='BuilderTester',
                                timeout=1200, target='Release',
                                factory_properties=None, official_release=False):
     factory_properties = factory_properties or {}

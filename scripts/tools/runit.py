@@ -8,7 +8,7 @@
 This is helpful for running scripts locally on a development machine.
 
 Try `scripts/common/runit.py python`
-or  (in scripts/slave): `../common/runit.py runtest.py --help`
+or  (in scripts/subordinate): `../common/runit.py runtest.py --help`
 """
 
 import optparse
@@ -53,7 +53,7 @@ def add_build_paths(path_list):
   build_paths.append(os.path.join(BUILD_DIR,
                                   '..', 'build_internal', 'site_config'))
   build_paths.append(os.path.join(BUILD_DIR,
-                                  '..', 'build_internal', 'scripts', 'master'))
+                                  '..', 'build_internal', 'scripts', 'main'))
 
   # build_paths now contains all the required paths, in *reverse order*
   # of priority.

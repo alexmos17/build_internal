@@ -8,8 +8,8 @@ This is based on commands.py and adds annotator-specific commands.
 """
 
 
-from master import chromium_step
-from master.factory import commands
+from main import chromium_step
+from main.factory import commands
 
 
 class AnnotatorCommands(commands.FactoryCommands):

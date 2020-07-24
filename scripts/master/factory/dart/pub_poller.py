@@ -15,7 +15,7 @@ from twisted.python import log
 from twisted.web.client import getPage
 
 from buildbot.changes import base
-from master.factory.dart import semantic_version
+from main.factory.dart import semantic_version
 
 VALUE_NOT_SET = -1
 
@@ -33,7 +33,7 @@ class PubPoller(base.PollingChangeSource):
     return 'Watching pub packages %s' % self.packages
 
   def make_change(self, package, version):
-    self.master.addChange(author='Pub: %s' % package,
+    self.main.addChange(author='Pub: %s' % package,
                           files=[],
                           comments='Polled from %s' % package,
                           project=self.project,

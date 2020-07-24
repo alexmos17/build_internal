@@ -16,16 +16,16 @@ import sys
 import urllib
 
 if sys.platform == 'cygwin':
-  root = '/cygdrive/e/b/swarm_slave'
+  root = '/cygdrive/e/b/swarm_subordinate'
 elif sys.platform == 'win32':
-  root = 'e:\\b\\swarm_slave'
+  root = 'e:\\b\\swarm_subordinate'
 else:
-  root = '/b/swarm_slave'
+  root = '/b/swarm_subordinate'
 if os.path.isdir(root):
   print('Warning: deleting %s' % root)
   shutil.rmtree(root, ignore_errors=True)
 if not os.path.isdir(root):
   os.makedirs(root)
 zip_file = os.path.join(root, 'swarming_bot.zip')
-urllib.urlretrieve('%s/get_slave_code' % host_url, zip_file)
+urllib.urlretrieve('%s/get_subordinate_code' % host_url, zip_file)
 os.execv(sys.executable, [sys.executable, zip_file])

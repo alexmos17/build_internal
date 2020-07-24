@@ -10,7 +10,7 @@ import unittest
 import test_env  # pylint: disable=W0403,W0611
 
 import mock
-from slave import runtest
+from subordinate import runtest
 
 
 # Note: The git-svn id / cr pos is intentionally modified.
@@ -26,7 +26,7 @@ BUG=405646
 
 Review URL: https://codereview.chromium.org/468103003
 
-Cr-Commit-Position: refs/heads/master@{#291141}
+Cr-Commit-Position: refs/heads/main@{#291141}
 git-svn-id: svn://svn.chromium.org/chrome/trunk/src@291140 0039d316-1c4b-4281
 """
 
@@ -109,7 +109,7 @@ class GetGitRevisionTest(unittest.TestCase):
     """Tests related to getting a commit position from build properties."""
     # pylint: disable=W0212
     self.assertEqual(runtest._GetCommitPos(
-        {'got_revision_cp': 'refs/heads/master@{#12345}'}), 12345)
+        {'got_revision_cp': 'refs/heads/main@{#12345}'}), 12345)
     # pylint: disable=W0212
     self.assertIsNone(runtest._GetCommitPos({'got_revision': 12345}))
 
@@ -123,30 +123,30 @@ class SendResultsToDashboardTest(unittest.TestCase):
   # Testing private method _GetDataFromLogProcessor.
   # Also, this test method doesn't reference self.
   # pylint: disable=W0212,R0201
-  @mock.patch('slave.runtest._GetDataFromLogProcessor')
-  @mock.patch('slave.results_dashboard.MakeListOfPoints')
-  @mock.patch('slave.results_dashboard.SendResults')
+  @mock.patch('subordinate.runtest._GetDataFromLogProcessor')
+  @mock.patch('subordinate.results_dashboard.MakeListOfPoints')
+  @mock.patch('subordinate.results_dashboard.SendResults')
   def test_SendResultsToDashboard_SimpleCase(
       self, SendResults, MakeListOfPoints, GetDataFromLogProcessor):
     """Tests that the right methods get called in _SendResultsToDashboard."""
     # Since this method just tests that certain methods get called when
     # a call to _SendResultsDashboard is made, the data used below is arbitrary.
     fake_charts_data = {'chart': {'traces': {'x': [1, 0]}, 'rev': 1000}}
-    fake_points_data = [{'test': 'master/bot/chart/x', 'revision': 1000}]
+    fake_points_data = [{'test': 'main/bot/chart/x', 'revision': 1000}]
     fake_results_tracker = object()
     GetDataFromLogProcessor.return_value = fake_charts_data
     MakeListOfPoints.return_value = fake_points_data
 
     runtest._SendResultsToDashboard(
         fake_results_tracker, 'linux', 'sunspider', 'http://x.com', 'builddir',
-        'my.master', 'Builder', 123, 'columns_file', extra_columns={})
+        'my.main', 'Builder', 123, 'columns_file', extra_columns={})
 
     # First a function is called to get data from the log processor.
     GetDataFromLogProcessor.assert_called_with(fake_results_tracker)
 
     # Then the data is re-formatted to a format that the dashboard accepts.
     MakeListOfPoints.assert_called_with(
-        fake_charts_data, 'linux', 'sunspider', 'my.master', 'Builder', 123, {})
+        fake_charts_data, 'linux', 'sunspider', 'my.main', 'Builder', 123, {})
 
     # Then a function is called to send the data (and any cached data).
     SendResults.assert_called_with(

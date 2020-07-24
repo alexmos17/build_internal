@@ -8,12 +8,12 @@ To be tested using a command-line like:
 
   /build/scripts/tools/run_recipe.py syzygy/continuous
       revision=0e9f25b1098271be2b096fd1c095d6d907cf86f7
-      mastername=master.client.syzygy
+      mainname=main.client.syzygy
       "buildername=Syzygy Debug"
-      slavename=fake_slave
+      subordinatename=fake_subordinate
       buildnumber=1
 
-Places resulting output in build/slave/fake_slave.
+Places resulting output in build/subordinate/fake_subordinate.
 """
 
 # Recipe module dependencies.
@@ -33,7 +33,7 @@ _BUILDERS = {'Syzygy Debug': ('syzygy', {'BUILD_CONFIG': 'Debug'}),
 
 
 def GenSteps(api):
-  """Generates the sequence of steps that will be run by the slave."""
+  """Generates the sequence of steps that will be run by the subordinate."""
   buildername = api.properties['buildername']
   assert buildername in _BUILDERS
 
@@ -42,7 +42,7 @@ def GenSteps(api):
   config, kwargs = _BUILDERS[buildername]
   s.set_config(config, **kwargs)
 
-  # Clean up any running processes on the slave.
+  # Clean up any running processes on the subordinate.
   s.taskkill()
 
   # Checkout and compile the project.

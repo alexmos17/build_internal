@@ -4,7 +4,7 @@
 
 """Common steps for recipes that sync/build Cronet sources."""
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 class CronetApi(recipe_api.RecipeApi):
   def __init__(self, **kwargs):

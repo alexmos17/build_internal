@@ -3,7 +3,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Ensure that all slaves.cfg files are well formatted and without duplicity.
+"""Ensure that all subordinates.cfg files are well formatted and without duplicity.
 """
 
 import os
@@ -16,23 +16,23 @@ from common import chromium_utils
 
 sys.path.pop(0)
 
-# List of slaves that are allowed to be used more than once.
+# List of subordinates that are allowed to be used more than once.
 WHITELIST = ['build1-m6']
 
 def main():
   status = 0
-  slaves = {}
-  for slave in chromium_utils.GetAllSlaves(fail_hard=True):
-    mastername = slave['mastername']
-    slavename = chromium_utils.EntryToSlaveName(slave)
-    if slave.get('subdir') == 'b':
-      print 'Illegal subdir for %s: %s' % (mastername, slavename)
+  subordinates = {}
+  for subordinate in chromium_utils.GetAllSubordinates(fail_hard=True):
+    mainname = subordinate['mainname']
+    subordinatename = chromium_utils.EntryToSubordinateName(subordinate)
+    if subordinate.get('subdir') == 'b':
+      print 'Illegal subdir for %s: %s' % (mainname, subordinatename)
       status = 1
-    if slavename and slave.get('hostname') not in WHITELIST:
-      slaves.setdefault(slavename, []).append(mastername)
-  for slavename, masters in slaves.iteritems():
-    if len(masters) > 1:
-      print '%s duplicated in masters: %s' % (slavename, ' '.join(masters))
+    if subordinatename and subordinate.get('hostname') not in WHITELIST:
+      subordinates.setdefault(subordinatename, []).append(mainname)
+  for subordinatename, mains in subordinates.iteritems():
+    if len(mains) > 1:
+      print '%s duplicated in mains: %s' % (subordinatename, ' '.join(mains))
       status = 1
   return status
 

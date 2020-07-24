@@ -4,7 +4,7 @@
 
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-from master.factory import annotator_factory
+from main.factory import annotator_factory
 
 m_annotator = annotator_factory.AnnotatorFactory()
 
@@ -25,13 +25,13 @@ def Update(c):
   ])
 
   specs = [
-    {'name': 'Mac32 Debug', 'slavebuilddir': 'mac32'},
-    {'name': 'Mac32 Release', 'slavebuilddir': 'mac32'},
-    {'name': 'Mac64 Debug', 'slavebuilddir': 'mac64'},
-    {'name': 'Mac64 Release', 'slavebuilddir': 'mac64'},
-    {'name': 'Mac Asan', 'slavebuilddir': 'mac_asan'},
-    {'name': 'iOS Debug', 'slavebuilddir': 'ios'},
-    {'name': 'iOS Release', 'slavebuilddir': 'ios'},
+    {'name': 'Mac32 Debug', 'subordinatebuilddir': 'mac32'},
+    {'name': 'Mac32 Release', 'subordinatebuilddir': 'mac32'},
+    {'name': 'Mac64 Debug', 'subordinatebuilddir': 'mac64'},
+    {'name': 'Mac64 Release', 'subordinatebuilddir': 'mac64'},
+    {'name': 'Mac Asan', 'subordinatebuilddir': 'mac_asan'},
+    {'name': 'iOS Debug', 'subordinatebuilddir': 'ios'},
+    {'name': 'iOS Release', 'subordinatebuilddir': 'ios'},
   ]
 
   c['builders'].extend([
@@ -40,6 +40,6 @@ def Update(c):
         'factory': m_annotator.BaseFactory('libyuv/libyuv'),
         'notify_on_missing': True,
         'category': 'mac',
-        'slavebuilddir': spec['slavebuilddir'],
+        'subordinatebuilddir': spec['subordinatebuilddir'],
       } for spec in specs
   ])

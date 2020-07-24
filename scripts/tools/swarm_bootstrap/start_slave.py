@@ -16,18 +16,18 @@ import os_utilities  # pylint: disable-msg=F0401
 import zipped_archive  # pylint: disable-msg=F0401
 
 
-def is_buildbot_slave_running():
-  """Returns True if a buildbot slave process is detected.
+def is_buildbot_subordinate_running():
+  """Returns True if a buildbot subordinate process is detected.
 
   Sometimes human error occurs, and a bot is double-booked to be both a
-  buildbot slave and a Swarming bot.
+  buildbot subordinate and a Swarming bot.
   """
   if sys.platform == 'win32':
     for drive in ('c', 'e'):
-      if os.path.isfile(drive + ':\\b\\build\\slave\\twistd.pid'):
+      if os.path.isfile(drive + ':\\b\\build\\subordinate\\twistd.pid'):
         return True
   else:
-    if os.path.isfile('/b/build/slave/twistd.pid'):
+    if os.path.isfile('/b/build/subordinate/twistd.pid'):
       return True
   return False
 
@@ -35,10 +35,10 @@ def is_buildbot_slave_running():
 def get_attributes():
   """Returns the attributes for this machine."""
   attributes = os_utilities.get_attributes(None)
-  if is_buildbot_slave_running():
+  if is_buildbot_subordinate_running():
     # Make sure no task is triggered on this bot until this is resolved.
     attributes['dimensions'] = {
-      'error': 'Detected a buildbot slave process!',
+      'error': 'Detected a buildbot subordinate process!',
       'id': attributes['id'],
     }
   return attributes

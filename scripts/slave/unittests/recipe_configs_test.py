@@ -23,8 +23,8 @@ from itertools import product, imap
 
 import test_env  # "relative import" pylint: disable=W0403,W0611
 
-from slave import recipe_loader
-from slave import recipe_util
+from subordinate import recipe_loader
+from subordinate import recipe_util
 
 import coverage
 
@@ -49,7 +49,7 @@ def init_recipe_modules():
   RECIPE_MODULES = covered(recipe_loader.load_recipe_modules,
                            recipe_util.MODULE_DIRS())
 
-from slave import recipe_config  # pylint: disable=F0401
+from subordinate import recipe_config  # pylint: disable=F0401
 
 
 def evaluate_configurations(args):

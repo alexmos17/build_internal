@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 class ChromiteApi(recipe_api.RecipeApi):
   manifest_url = 'https://chromium.googlesource.com/chromiumos/manifest.git'
@@ -19,7 +19,7 @@ class ChromiteApi(recipe_api.RecipeApi):
   def cbuildbot(self, name, config, flags=None, chromite_path=None, **kwargs):
     """Return a step to run a command inside the cros_sdk."""
     chromite_path = (chromite_path or
-                     self.m.path['slave_build'].join(self.chromite_subpath))
+                     self.m.path['subordinate_build'].join(self.chromite_subpath))
     arg_list = []
     for k, v in sorted((flags or {}).items()):
       if v is not None:
@@ -40,7 +40,7 @@ class ChromiteApi(recipe_api.RecipeApi):
                  **kwargs):
     """Return a step to run a command inside the cros_sdk."""
     chromite_path = (chromite_path or
-                     self.m.path['slave_build'].join(self.chromite_subpath))
+                     self.m.path['subordinate_build'].join(self.chromite_subpath))
 
     chroot_cmd = self.m.path.join(chromite_path, 'bin', 'cros_sdk')
 

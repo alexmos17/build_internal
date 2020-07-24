@@ -11,7 +11,7 @@ import os
 import sys
 
 from common import chromium_utils
-from slave import build_directory
+from subordinate import build_directory
 import config
 
 
@@ -109,7 +109,7 @@ def main():
     debugger_dir = ProbeDebuggerDir()
   if not debugger_dir:
     print 'Cannot find debugger.'
-    return config.Master.retcode_warnings
+    return config.Main.retcode_warnings
 
   symbol_path = os.path.join(options.build_dir, options.target)
   dll_path = os.path.join(symbol_path, 'chrome.dll')

@@ -6,24 +6,24 @@
 
 Based on gclient_factory.py."""
 
-from master.factory import gclient_factory
-from master.factory import nacl_commands
+from main.factory import gclient_factory
+from main.factory import nacl_commands
 
 import config
 
 class NativeClientFactory(gclient_factory.GClientFactory):
-  """Encapsulates data and methods common to the nacl master.cfg files."""
+  """Encapsulates data and methods common to the nacl main.cfg files."""
 
-  CUSTOM_VARS_GOOGLECODE_URL = ('googlecode_url', config.Master.googlecode_url)
+  CUSTOM_VARS_GOOGLECODE_URL = ('googlecode_url', config.Main.googlecode_url)
   CUSTOM_VARS_SOURCEFORGE_URL = ('sourceforge_url',
-                                 config.Master.sourceforge_url)
-  CUSTOM_VARS_WEBKIT_MIRROR = ('webkit_trunk', config.Master.webkit_trunk_url)
+                                 config.Main.sourceforge_url)
+  CUSTOM_VARS_WEBKIT_MIRROR = ('webkit_trunk', config.Main.webkit_trunk_url)
 
   def __init__(self, build_dir, target_platform,
                alternate_url=None, custom_deps_list=None, target_os=None):
     solutions = []
     self.target_platform = target_platform
-    nacl_url = config.Master.nacl_url
+    nacl_url = config.Main.nacl_url
     if alternate_url:
       nacl_url = alternate_url
     main = gclient_factory.GClientSolution(
@@ -53,7 +53,7 @@ class NativeClientFactory(gclient_factory.GClientFactory):
     if R('nacl_trigger_llvm'):
       f.AddTrigger('llvm_trigger')
 
-  def NativeClientFactory(self, tests=None, slave_type='BuilderTester',
+  def NativeClientFactory(self, tests=None, subordinate_type='BuilderTester',
                           official_release=False,
                           options=None, factory_properties=None):
     factory_properties = factory_properties or {}
@@ -65,7 +65,7 @@ class NativeClientFactory(gclient_factory.GClientFactory):
     factory = self.BaseFactory(gclient_spec,
                                official_release=official_release,
                                factory_properties=factory_properties,
-                               slave_type=slave_type)
+                               subordinate_type=subordinate_type)
     # Get the factory command object to create new steps to the factory.
     nacl_cmd_obj = nacl_commands.NativeClientCommands(factory,
                                                       self._build_dir,
@@ -79,7 +79,7 @@ class NativeClientFactory(gclient_factory.GClientFactory):
     # Whole build in one step.
     nacl_cmd_obj.AddAnnotatedStep(
         ['buildbot/buildbot_selector.py'], timeout=1500, usePython=True,
-        env={'BUILDBOT_SLAVE_TYPE': slave_type},
+        env={'BUILDBOT_SLAVE_TYPE': subordinate_type},
         factory_properties=factory_properties)
 
     # Trigger tests on other builders.

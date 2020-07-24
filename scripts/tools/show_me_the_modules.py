@@ -12,10 +12,10 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from slave import annotated_run
-from slave import recipe_api
-from slave import recipe_loader
-from slave import recipe_util
+from subordinate import annotated_run
+from subordinate import recipe_api
+from subordinate import recipe_loader
+from subordinate import recipe_util
 
 def trim_doc(docstring):
   """From PEP 257"""

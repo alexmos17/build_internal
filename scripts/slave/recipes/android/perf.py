@@ -66,9 +66,9 @@ BUILDERS = {
 }
 
 def GenSteps(api):
-  mastername = api.properties['mastername']
+  mainname = api.properties['mainname']
   buildername = api.properties['buildername']
-  builder = BUILDERS[mastername][buildername]
+  builder = BUILDERS[mainname][buildername]
   api.chromium_android.configure_from_properties('base_config',
                                                  REPO_NAME='src',
                                                  REPO_URL=REPO_URL,
@@ -78,7 +78,7 @@ def GenSteps(api):
   api.gclient.apply_config('android')
 
   api.bot_update.ensure_checkout()
-  api.path['checkout'] = api.path['slave_build'].join('src')
+  api.path['checkout'] = api.path['subordinate_build'].join('src')
   api.chromium_android.clean_local_files()
 
   api.chromium_android.download_build(bucket=builder['bucket'],
@@ -112,21 +112,21 @@ def _sanitize_nonalpha(text):
   return ''.join(c if c.isalnum() else '_' for c in text)
 
 def GenTests(api):
-  for mastername, builders in BUILDERS.iteritems():
+  for mainname, builders in BUILDERS.iteritems():
     for buildername in builders:
       yield (
-          api.test('full_%s_%s' % (_sanitize_nonalpha(mastername),
+          api.test('full_%s_%s' % (_sanitize_nonalpha(mainname),
                                    _sanitize_nonalpha(buildername))) +
           api.properties.generic(
               repo_name='src',
               repo_url=REPO_URL,
-              mastername=mastername,
+              mainname=mainname,
               buildername=buildername,
               parent_buildername='parent_buildername',
               parent_buildnumber='1729',
               parent_revision='deadbeef',
               revision='deadbeef',
-              slavename='slavename',
+              subordinatename='subordinatename',
               target='Release') +
           api.override_step_data('List adb devices', api.json.output([
             "014E1F310401C009", "014E1F310401C010"
@@ -136,25 +136,25 @@ def GenTests(api):
       api.properties.generic(
           repo_name='src',
               repo_url=REPO_URL,
-              mastername='chromium.perf',
+              mainname='chromium.perf',
               buildername='Android Nexus5 Perf',
               parent_buildername='parent_buildername',
               parent_buildnumber='1729',
               parent_revision='deadbeef',
               revision='deadbeef',
-              slavename='slavename',
+              subordinatename='subordinatename',
               target='Release')
       + api.step_data('device_status_check', retcode=1))
   yield (api.test('provision_devices') +
       api.properties.generic(
           repo_name='src',
               repo_url=REPO_URL,
-              mastername='chromium.perf',
+              mainname='chromium.perf',
               buildername='Android Nexus5 Perf',
               parent_buildername='parent_buildername',
               parent_buildnumber='1729',
               parent_revision='deadbeef',
               revision='deadbeef',
-              slavename='slavename',
+              subordinatename='subordinatename',
               target='Release')
       + api.step_data('provision_devices', retcode=1))

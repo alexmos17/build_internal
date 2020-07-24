@@ -26,7 +26,7 @@ def GenSteps(api):
   bl_cfg.got_revision_mapping['src/blatley'] = 'got_blatley_revision'
   api.gclient.checkout(
       gclient_config=bl_cfg,
-      cwd=api.path['slave_build'].join('src', 'third_party'))
+      cwd=api.path['subordinate_build'].join('src', 'third_party'))
 
   api.gclient.break_locks()
   del api.gclient.spec_alias

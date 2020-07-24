@@ -5,7 +5,7 @@
 import ast
 import re
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 
 class SyzygyApi(recipe_api.RecipeApi):
@@ -113,7 +113,7 @@ PATCH=1
       The generated python step.
     """
     gsutil_cp_dir_py = self.m.path['build'].join(
-        'scripts', 'slave', 'syzygy', 'gsutil_cp_dir.py')
+        'scripts', 'subordinate', 'syzygy', 'gsutil_cp_dir.py')
     dst_dir = '%s/%s' % (self._SYZYGY_GS, dst_rel_path)
     args = [src_dir, dst_dir]
     return self.m.python(step_name, gsutil_cp_dir_py, args)
@@ -121,10 +121,10 @@ PATCH=1
   def taskkill(self):
     """Run chromium.taskkill.
 
-    This invokes a dummy step on the test slave as killing all instances of
+    This invokes a dummy step on the test subordinate as killing all instances of
     Chrome seriously impairs development.
     """
-    if self.m.properties['slavename'] == 'fake_slave':
+    if self.m.properties['subordinatename'] == 'fake_subordinate':
       return self.m.python.inline('taskkill', 'print "dummy taskkill"')
     return self.m.chromium.taskkill()
 
@@ -140,7 +140,7 @@ PATCH=1
     # Compile the project. This is done by manually invoking compile.py for now,
     # as chromium.compile doesn't support MSVS.
     # TODO(chrisha): Fix this once we build with Ninja!
-    #compile_py = self.m.path['build'].join('scripts', 'slave', 'compile.py')
+    #compile_py = self.m.path['build'].join('scripts', 'subordinate', 'compile.py')
     #args = ['--solution', self.c.solution,
     #        '--project', self.c.project,
     #        '--target',self.c.build_config,
@@ -211,7 +211,7 @@ PATCH=1
     cov_dir = self.output_dir.join('cov')
     build_id = self._get_build_id()
     archive_path = 'builds/coverage/%s' % build_id
-    if self.m.properties['slavename'] == 'fake_slave':
+    if self.m.properties['subordinatename'] == 'fake_subordinate':
       archive_path = 'test/' + archive_path
     report_url = '%s/%s/index.html' % (self._SYZYGY_ARCHIVE_URL, archive_path)
     step = self._gen_step_gs_util_cp_dir(
@@ -228,7 +228,7 @@ PATCH=1
     bin_dir = self.output_dir.join('archive')
     archive_name = self._get_build_id()
     archive_path = 'builds/official/%s' % archive_name
-    if self.m.properties['slavename'] == 'fake_slave':
+    if self.m.properties['subordinatename'] == 'fake_subordinate':
       archive_path = 'test/' + archive_path
     bin_url = '%s/index.html?path=%s/' % (
         self._SYZYGY_ARCHIVE_URL, archive_path)

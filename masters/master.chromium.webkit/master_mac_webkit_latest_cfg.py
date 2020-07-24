@@ -18,16 +18,16 @@
 #
 # If you have questions about this, you can ask nsylvain.
 
-from master import master_config
-from master.factory import chromium_factory
+from main import main_config
+from main.factory import chromium_factory
 
-import master_site_config
+import main_site_config
 
-ActiveMaster = master_site_config.ChromiumWebkit
+ActiveMain = main_site_config.ChromiumWebkit
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 F = helper.Factory
 T = helper.Triggerable
@@ -42,7 +42,7 @@ defaults['category'] = 'layout'
 ################################################################################
 
 # Archive location
-rel_archive = master_config.GetGSUtilUrl('chromium-build-transfer',
+rel_archive = main_config.GetGSUtilUrl('chromium-build-transfer',
                                          'WebKit Mac Builder')
 
 #
@@ -57,7 +57,7 @@ B('WebKit Mac Builder', 'f_webkit_mac_rel',
   auto_reboot=False, scheduler='global_scheduler',
   builddir='webkit-mac-latest-rel')
 F('f_webkit_mac_rel', mac().ChromiumFactory(
-    slave_type='Builder',
+    subordinate_type='Builder',
     build_url=rel_archive,
     options=['--build-tool=ninja', '--compiler=goma-clang', '--',
         'blink_tests'],
@@ -76,11 +76,11 @@ F('f_webkit_mac_rel', mac().ChromiumFactory(
 
 B('WebKit Mac10.6', 'f_webkit_rel_tests_106', scheduler='s5_webkit_rel_trigger')
 F('f_webkit_rel_tests_106', mac().ChromiumFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=rel_archive,
     tests=chromium_factory.blink_tests,
     factory_properties={
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'generate_gtest_json': True,
         'test_results_server': 'test-results.appspot.com',
         'blink_config': 'blink',
@@ -88,11 +88,11 @@ F('f_webkit_rel_tests_106', mac().ChromiumFactory(
 
 B('WebKit Mac10.7', 'f_webkit_rel_tests_107', scheduler='s5_webkit_rel_trigger')
 F('f_webkit_rel_tests_107', mac().ChromiumFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=rel_archive,
     tests=chromium_factory.blink_tests,
     factory_properties={
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'generate_gtest_json': True,
         'test_results_server': 'test-results.appspot.com',
         'blink_config': 'blink',
@@ -101,11 +101,11 @@ F('f_webkit_rel_tests_107', mac().ChromiumFactory(
 B('WebKit Mac10.8', 'f_webkit_rel_tests_108',
   scheduler='s5_webkit_rel_trigger')
 F('f_webkit_rel_tests_108', mac().ChromiumFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=rel_archive,
     tests=chromium_factory.blink_tests,
     factory_properties={
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'generate_gtest_json': True,
         'test_results_server': 'test-results.appspot.com',
         'blink_config': 'blink',
@@ -118,7 +118,7 @@ F('f_webkit_rel_tests_108_retina', mac().ChromiumFactory(
     options=['--build-tool=ninja', '--compiler=goma-clang', '--',
         'blink_tests'],
     factory_properties={
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'blink_config': 'blink',
         'gclient_env': {
             'GYP_DEFINES':'fastbuild=1',
@@ -132,11 +132,11 @@ F('f_webkit_rel_tests_108_retina', mac().ChromiumFactory(
 B('WebKit Mac10.9', 'f_webkit_rel_tests_109',
   scheduler='s5_webkit_rel_trigger')
 F('f_webkit_rel_tests_109', mac().ChromiumFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=rel_archive,
     tests=chromium_factory.blink_tests,
     factory_properties={
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'generate_gtest_json': True,
         'test_results_server': 'test-results.appspot.com',
         'blink_config': 'blink',
@@ -152,7 +152,7 @@ F('f_webkit_mac_oilpan_rel', mac().ChromiumFactory(
         'additional_expectations': [
             ['third_party', 'WebKit', 'LayoutTests', 'OilpanExpectations' ],
         ],
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'blink_config': 'blink',
         'generate_gtest_json': True,
         'gclient_env': {
@@ -168,7 +168,7 @@ F('f_webkit_mac_oilpan_rel', mac().ChromiumFactory(
 ################################################################################
 
 # Archive location
-dbg_archive = master_config.GetGSUtilUrl('chromium-build-transfer',
+dbg_archive = main_config.GetGSUtilUrl('chromium-build-transfer',
                                          'WebKit Mac Builder (dbg)')
 
 #
@@ -183,7 +183,7 @@ B('WebKit Mac Builder (dbg)', 'f_webkit_mac_dbg', auto_reboot=False,
   scheduler='global_scheduler', builddir='webkit-mac-latest-dbg')
 F('f_webkit_mac_dbg', mac().ChromiumFactory(
     target='Debug',
-    slave_type='Builder',
+    subordinate_type='Builder',
     build_url=dbg_archive,
     options=['--build-tool=ninja', '--compiler=goma-clang', '--',
         'blink_tests'],
@@ -203,11 +203,11 @@ B('WebKit Mac10.6 (dbg)', 'f_webkit_dbg_tests',
   scheduler='s5_webkit_dbg_trigger')
 F('f_webkit_dbg_tests', mac().ChromiumFactory(
     target='Debug',
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=dbg_archive,
     tests=chromium_factory.blink_tests,
     factory_properties={
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'generate_gtest_json': True,
         'test_results_server': 'test-results.appspot.com',
         'blink_config': 'blink',
@@ -227,7 +227,7 @@ F('f_webkit_mac_oilpan_dbg', mac().ChromiumFactory(
         'additional_expectations': [
             ['third_party', 'WebKit', 'LayoutTests', 'OilpanExpectations' ],
         ],
-        'archive_webkit_results': ActiveMaster.is_production_host,
+        'archive_webkit_results': ActiveMain.is_production_host,
         'blink_config': 'blink',
         'generate_gtest_json': True,
         'gclient_env': {
@@ -242,5 +242,5 @@ F('f_webkit_mac_oilpan_dbg', mac().ChromiumFactory(
 ##
 ################################################################################
 
-def Update(_config, _active_master, c):
+def Update(_config, _active_main, c):
   return helper.Update(c)

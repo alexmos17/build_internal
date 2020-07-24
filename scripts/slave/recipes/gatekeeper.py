@@ -12,8 +12,8 @@ DEPS = [
 
 
 def gatekeeper_step(api, tree_name, tree_args):
-  gatekeeper = api.path['build'].join('scripts', 'slave', 'gatekeeper_ng.py')
-  json_file = api.path['build'].join('scripts', 'slave', 'gatekeeper.json')
+  gatekeeper = api.path['build'].join('scripts', 'subordinate', 'gatekeeper_ng.py')
+  json_file = api.path['build'].join('scripts', 'subordinate', 'gatekeeper.json')
 
   args = ['-v', '--json', json_file]
 
@@ -32,8 +32,8 @@ def gatekeeper_step(api, tree_name, tree_args):
   if tree_args.get('password-file'):
     args.extend(['--password-file', tree_args['password-file']])
 
-  if tree_args.get('masters'):
-    args.extend(tree_args['masters'])
+  if tree_args.get('mains'):
+    args.extend(tree_args['mains'])
 
   return api.python('gatekeeper: %s' % str(tree_name), gatekeeper, args)
 
@@ -41,12 +41,12 @@ def gatekeeper_step(api, tree_name, tree_args):
 def GenSteps(api):
   step_result = api.json.read(
     'reading gatekeeper_trees.json',
-    api.path['build'].join('scripts', 'slave', 'gatekeeper_trees.json'),
+    api.path['build'].join('scripts', 'subordinate', 'gatekeeper_trees.json'),
     # Needed for training step.
     step_test_data=lambda: api.json.test_api.output({
       'blink': {
         'build-db': 'blink_build_db.json',
-        'masters': [
+        'mains': [
           'https://build.chromium.org/p/chromium.webkit'
           ],
         'open-tree': True,

@@ -7,16 +7,16 @@ from buildbot.scheduler import Triggerable
 
 import collections
 
-# This file contains useful functions for masters whose slaves run recipes.
+# This file contains useful functions for mains whose subordinates run recipes.
 
-def AddSchedulersAndTriggers(buildmaster_config=None,
-                             slave_list=None,
+def AddSchedulersAndTriggers(buildmain_config=None,
+                             subordinate_list=None,
                              scheduler_name=None,
                              branch=None):
-  """Adds schedulers and triggers to the BuildmasterConfig based on
-  the contents of slaves.cfg, passed in as a slave_list.
+  """Adds schedulers and triggers to the BuildmainConfig based on
+  the contents of subordinates.cfg, passed in as a subordinate_list.
 
-  This function relies on certain structure in the slaves.cfg, in
+  This function relies on certain structure in the subordinates.cfg, in
   particular the custom 'triggered_by' property, which is not yet
   commonly used to define triggers.
 
@@ -24,22 +24,22 @@ def AddSchedulersAndTriggers(buildmaster_config=None,
   invoke triggers, to the (synthesized) name of the trigger.
 
   TODO(kbr): this function does not yet support builders with
-  multiple slaves behind them, but could be updated to do so.
+  multiple subordinates behind them, but could be updated to do so.
 
   Throws an Exception if a non-existent builder is mentioned in
   another builder's 'triggered_by' property.
 
   Arguments:
 
-    buildmaster_config: a BuildmasterConfig into which the
+    buildmain_config: a BuildmainConfig into which the
       'schedulers' property will be defined.
 
-    slave_list: a SlavesList constructed from slaves.cfg.
+    subordinate_list: a SubordinatesList constructed from subordinates.cfg.
 
     scheduler_name: the name of the Scheduler for the polling (not
       triggered) builders.
   """
-  c = buildmaster_config
+  c = buildmain_config
   polling_builders = []
   # Maps the parent builder to a set of the names of the builders it triggers.
   trigger_map = collections.defaultdict(list)
@@ -47,11 +47,11 @@ def AddSchedulersAndTriggers(buildmaster_config=None,
   # trigger, wrapped in a list.
   trigger_name_map = {}
   next_group_id = 0
-  for slave in slave_list.slaves:
-    builder = slave['builder']
-    parent_builder = slave.get('triggered_by')
+  for subordinate in subordinate_list.subordinates:
+    builder = subordinate['builder']
+    parent_builder = subordinate.get('triggered_by')
     if parent_builder is not None:
-      if slave_list.GetSlave(builder=parent_builder) is None:
+      if subordinate_list.GetSubordinate(builder=parent_builder) is None:
         raise Exception('Could not find parent builder %s for builder %s' %
                         (parent_builder, builder))
       trigger_map[parent_builder].append(builder)
@@ -70,20 +70,20 @@ def AddSchedulersAndTriggers(buildmaster_config=None,
                                        builderNames=builders))
   return trigger_name_map
 
-def AddRecipeBasedBuilders(buildmaster_config=None,
-                           slave_list=None,
+def AddRecipeBasedBuilders(buildmain_config=None,
+                           subordinate_list=None,
                            annotator=None,
                            trigger_name_map=None):
-  """Writes builders which use recipes to the BuildmasterConfig's
+  """Writes builders which use recipes to the BuildmainConfig's
   'builders' list, using the AnnotatorFactory's BaseFactory.
   Specifies some common factory properties for these builders.
 
   Arguments:
 
-    buildmaster_config: a BuildmasterConfig into which the
+    buildmain_config: a BuildmainConfig into which the
       'builders' property will be defined.
 
-    slave_list: a SlavesList constructed from slaves.cfg.
+    subordinate_list: a SubordinatesList constructed from subordinates.cfg.
 
     annotator: an AnnotatorFactory instance.
 
@@ -91,28 +91,28 @@ def AddRecipeBasedBuilders(buildmaster_config=None,
       AddSchedulersAndTriggers, above.
   """
   builders = []
-  for slave in slave_list.slaves:
-    if 'recipe' in slave:
+  for subordinate in subordinate_list.subordinates:
+    if 'recipe' in subordinate:
       factory_properties = {
         'test_results_server': 'test-results.appspot.com',
         'generate_gtest_json': True,
-        'build_config': slave['build_config']
+        'build_config': subordinate['build_config']
       }
-      if 'perf_id' in slave:
+      if 'perf_id' in subordinate:
         factory_properties['show_perf_results'] = True
-        factory_properties['perf_id'] = slave['perf_id']
-      name = slave['builder']
+        factory_properties['perf_id'] = subordinate['perf_id']
+      name = subordinate['builder']
       builder = {
         'name': name,
         'factory': annotator.BaseFactory(
-          slave['recipe'],
+          subordinate['recipe'],
           factory_properties,
           [trigger_name_map[name]] if name in trigger_name_map else None),
-        'gatekeeper': slave.get('gatekeeper_categories', ''),
+        'gatekeeper': subordinate.get('gatekeeper_categories', ''),
       }
-      # Don't specify auto_reboot unless slaves.cfg does, to let
-      # master_utils' default take effect.
-      if 'auto_reboot' in slave:
-        builder['auto_reboot'] = slave['auto_reboot']
+      # Don't specify auto_reboot unless subordinates.cfg does, to let
+      # main_utils' default take effect.
+      if 'auto_reboot' in subordinate:
+        builder['auto_reboot'] = subordinate['auto_reboot']
       builders.append(builder)
-  buildmaster_config['builders'] = builders
+  buildmain_config['builders'] = builders

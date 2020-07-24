@@ -11,8 +11,8 @@ TODO(stip): Move the perf dashboard code from runtest.py to here.
 
 import re
 
-from slave import performance_log_processor
-from slave import slave_utils
+from subordinate import performance_log_processor
+from subordinate import subordinate_utils
 
 
 def getText(result, observer, name):
@@ -57,12 +57,12 @@ def getText(result, observer, name):
   # TODO(xusydoc): see if 'crashed or hung' should be tracked by RunningTests().
   if failed_test_count:
     failure_text = ['failed %d' % failed_test_count]
-    if observer.master_name:
+    if observer.main_name:
       # Include the link to the flakiness dashboard.
       failure_text.append('<div class="BuildResultInfo">')
-      failure_text.append('<a href="%s#master=%s&testType=%s'
+      failure_text.append('<a href="%s#main=%s&testType=%s'
                           '&tests=%s">' % (GTEST_DASHBOARD_BASE,
-                                           observer.master_name,
+                                           observer.main_name,
                                            name,
                                            ','.join(observer.FailedTests())))
       failure_text.append('Flakiness dashboard')
@@ -89,15 +89,15 @@ def annotate(test_name, result, log_processor, full_name=False,
       testabbr = re.sub(r'[^\w\.\-]', '_', failure)
     else:
       testabbr = re.sub(r'[^\w\.\-]', '_', failure.split('.')[-1])
-    slave_utils.WriteLogLines(testabbr,
+    subordinate_utils.WriteLogLines(testabbr,
                               log_processor.FailureDescription(failure))
   for suppression_hash in sorted(log_processor.SuppressionHashes()):
-    slave_utils.WriteLogLines(suppression_hash,
+    subordinate_utils.WriteLogLines(suppression_hash,
                               log_processor.Suppression(suppression_hash))
 
   if log_processor.ParsingErrors():
     # Generate a log file containing the list of errors.
-    slave_utils.WriteLogLines('log parsing error(s)',
+    subordinate_utils.WriteLogLines('log parsing error(s)',
                               log_processor.ParsingErrors())
 
     log_processor.ClearParsingErrors()
@@ -113,7 +113,7 @@ def annotate(test_name, result, log_processor, full_name=False,
         len(log_processor.SuppressionHashes())):
       print '@@@STEP_WARNINGS@@@'
       get_text_result = performance_log_processor.WARNINGS
-  elif result == slave_utils.WARNING_EXIT_CODE:
+  elif result == subordinate_utils.WARNING_EXIT_CODE:
     print '@@@STEP_WARNINGS@@@'
     get_text_result = performance_log_processor.WARNINGS
   else:
@@ -129,4 +129,4 @@ def annotate(test_name, result, log_processor, full_name=False,
                       'no test_id in factory_properties!')
     for logname, log in log_processor.PerformanceLogs().iteritems():
       lines = [str(l).rstrip() for l in log]
-      slave_utils.WriteLogLines(logname, lines, perf=perf_dashboard_id)
+      subordinate_utils.WriteLogLines(logname, lines, perf=perf_dashboard_id)

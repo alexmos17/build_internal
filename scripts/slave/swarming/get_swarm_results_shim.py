@@ -19,8 +19,8 @@ from common import chromium_utils
 from common import find_depot_tools  # pylint: disable=W0611
 from common import gtest_utils
 
-from slave import annotation_utils
-from slave.swarming import swarming_utils
+from subordinate import annotation_utils
+from subordinate.swarming import swarming_utils
 
 # From depot_tools/
 import fix_encoding
@@ -195,24 +195,24 @@ def process_build_properties(options, name):
   if not isolated_hash:
     print >> sys.stderr, 'Failed to get hash for %s' % name
     sys.exit(1)
-  slave_os = options.build_properties.get('target_os', sys.platform)
+  subordinate_os = options.build_properties.get('target_os', sys.platform)
   new_taskname = '%s/%s/%s' % (
       name,
       # TODO(maruel): This will have to be runtime specified.
-      swarming_utils.OS_MAPPING[slave_os],
+      swarming_utils.OS_MAPPING[subordinate_os],
       isolated_hash)
   return old_taskname, new_taskname
 
 
 def main():
-  """Note: this is solely to run the current master's code and can totally
+  """Note: this is solely to run the current main's code and can totally
   differ from the underlying script flags.
 
   To update these flags:
   - Update the following code to support both the previous flag and the new
     flag.
-  - Change scripts/master/factory/swarm_commands.py to pass the new flag.
-  - Restart all the masters using swarming.
+  - Change scripts/main/factory/swarm_commands.py to pass the new flag.
+  - Restart all the mains using swarming.
   - Remove the old flag from this code.
   """
   client = swarming_utils.find_client(os.getcwd())

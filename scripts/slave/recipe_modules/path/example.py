@@ -11,7 +11,7 @@ DEPS = [
 
 def GenSteps(api):
   api.step('step1',
-                  ['/bin/echo', str(api.path['slave_build'].join('foo'))])
+                  ['/bin/echo', str(api.path['subordinate_build'].join('foo'))])
 
   # listdir demo.
   result = api.path.listdir('fake dir', '/fake/dir')
@@ -31,12 +31,12 @@ def GenSteps(api):
            ['echo', api.path.resource('dir', 'file.py')])
 
   # rmwildcard demo
-  api.path.rmwildcard('*.o', api.path['slave_build'])
+  api.path.rmwildcard('*.o', api.path['subordinate_build'])
 
 
 def GenTests(api):
   # This line is for code coverage.
-  api.path['slave_build'].join('foo')
+  api.path['subordinate_build'].join('foo')
 
   for platform in ('linux', 'win', 'mac'):
     yield api.test(platform) + api.platform.name(platform)

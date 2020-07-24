@@ -1,5 +1,5 @@
-from slave import recipe_test_api
-from slave.recipe_config_types import Path
+from subordinate import recipe_test_api
+from subordinate.recipe_config_types import Path
 
 class PathTestApi(recipe_test_api.RecipeTestApi):
   @recipe_test_api.mod_test_data

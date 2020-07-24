@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave import recipe_api
-from slave import recipe_util
+from subordinate import recipe_api
+from subordinate import recipe_util
 
 class GSUtilApi(recipe_api.RecipeApi):
   def __call__(self, cmd, name=None, use_retry_wrapper=True, **kwargs):

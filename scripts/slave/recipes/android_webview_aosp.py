@@ -127,7 +127,7 @@ def GenTests(api):
     api.test('uses_android_repo') +
     api.properties.scheduled() +
     api.path.exists(
-      api.path['slave_build'].join('android-src', '.repo', 'repo', 'repo')) +
+      api.path['subordinate_build'].join('android-src', '.repo', 'repo', 'repo')) +
     dependant_change
   )
 

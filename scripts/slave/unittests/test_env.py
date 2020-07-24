@@ -20,7 +20,7 @@ DEPOT_TOOLS_DIR = os.path.join(BASE_DIR, os.pardir, 'depot_tools')
 sys.path.insert(0, os.path.join(BASE_DIR, 'scripts'))
 sys.path.insert(0, os.path.join(BASE_DIR, 'site_config'))
 sys.path.insert(0, os.path.join(BASE_DIR, 'third_party'))
-sys.path.insert(0, os.path.join(BASE_DIR, 'third_party', 'buildbot_slave_8_4'))
+sys.path.insert(0, os.path.join(BASE_DIR, 'third_party', 'buildbot_subordinate_8_4'))
 sys.path.insert(0, os.path.join(BASE_DIR, 'third_party', 'twisted_10_2'))
 sys.path.insert(0, os.path.join(BASE_DIR, 'third_party', 'mock-1.0.1'))
 

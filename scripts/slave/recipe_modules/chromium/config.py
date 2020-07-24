@@ -4,9 +4,9 @@
 
 import pipes
 
-from slave.recipe_config import config_item_context, ConfigGroup
-from slave.recipe_config import Dict, List, Single, Static, Set, BadConf
-from slave.recipe_config_types import Path
+from subordinate.recipe_config import config_item_context, ConfigGroup
+from subordinate.recipe_config import Dict, List, Single, Static, Set, BadConf
+from subordinate.recipe_config_types import Path
 
 # Because of the way that we use decorators, pylint can't figure out the proper
 # type signature of functions annotated with the @config_ctx decorator.

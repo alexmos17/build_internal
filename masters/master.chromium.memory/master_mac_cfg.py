@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import master_config
-from master.factory import chromium_factory
+from main import main_config
+from main.factory import chromium_factory
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 F = helper.Factory
 S = helper.Scheduler
@@ -20,7 +20,7 @@ defaults['category'] = '2mac asan'
 #
 # Main asan release scheduler for src/
 #
-S('mac_asan_rel', branch='master', treeStableTimer=60)
+S('mac_asan_rel', branch='main', treeStableTimer=60)
 
 #
 # Triggerable scheduler for the rel asan builder
@@ -124,10 +124,10 @@ mac_asan_tests_3 = [
   'interactive_ui_tests',
 ]
 
-mac_asan_archive = master_config.GetGSUtilUrl('chromium-build-transfer',
+mac_asan_archive = main_config.GetGSUtilUrl('chromium-build-transfer',
                                               'Mac ASan Builder')
 
-mac_asan_64_archive = master_config.GetGSUtilUrl('chromium-build-transfer',
+mac_asan_64_archive = main_config.GetGSUtilUrl('chromium-build-transfer',
                                                  'Mac ASan 64 Builder')
 
 gclient_env = {
@@ -152,7 +152,7 @@ B('Mac ASan Builder', 'mac_asan_rel', 'compile', 'mac_asan_rel',
 F('mac_asan_rel', mac().ChromiumASANFactory(
     target='Release',
     build_url=mac_asan_archive,
-    slave_type='Builder',
+    subordinate_type='Builder',
     options=[
         '--build-tool=ninja',
         '--compiler=goma-clang',
@@ -171,7 +171,7 @@ F('mac_asan_rel', mac().ChromiumASANFactory(
 B('Mac ASan Tests (1)', 'mac_asan_rel_tests_1', 'testers',
   'mac_asan_rel_trigger', notify_on_missing=True)
 F('mac_asan_rel_tests_1', mac().ChromiumASANFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=mac_asan_archive,
     tests=mac_asan_tests_1,
     factory_properties={
@@ -186,7 +186,7 @@ F('mac_asan_rel_tests_1', mac().ChromiumASANFactory(
 B('Mac ASan Tests (2)', 'mac_asan_rel_tests_2', 'testers',
   'mac_asan_rel_trigger', notify_on_missing=True)
 F('mac_asan_rel_tests_2', mac().ChromiumASANFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=mac_asan_archive,
     tests=mac_asan_tests_2,
     factory_properties={
@@ -200,7 +200,7 @@ F('mac_asan_rel_tests_2', mac().ChromiumASANFactory(
 B('Mac ASan Tests (3)', 'mac_asan_rel_tests_3', 'testers',
   'mac_asan_rel_trigger', notify_on_missing=True)
 F('mac_asan_rel_tests_3', mac().ChromiumASANFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=mac_asan_archive,
     tests=mac_asan_tests_3,
     factory_properties={
@@ -219,7 +219,7 @@ B('Mac ASan 64 Builder', 'mac_asan_64_rel_f', 'compile', 'mac_asan_rel',
 F('mac_asan_64_rel_f', mac().ChromiumASANFactory(
     target='Release',
     build_url=mac_asan_64_archive,
-    slave_type='Builder',
+    subordinate_type='Builder',
     options=[
         '--build-tool=ninja',
         '--compiler=goma-clang',
@@ -238,7 +238,7 @@ F('mac_asan_64_rel_f', mac().ChromiumASANFactory(
 B('Mac ASan 64 Tests (1)', 'mac_asan_64_rel_tests_1', 'testers',
   'mac_asan_64_rel_trigger', notify_on_missing=True)
 F('mac_asan_64_rel_tests_1', mac().ChromiumASANFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=mac_asan_64_archive,
     tests=mac_asan_tests_1 + ['unit_tests'],
     factory_properties={
@@ -253,7 +253,7 @@ F('mac_asan_64_rel_tests_1', mac().ChromiumASANFactory(
 B('Mac ASan 64 Tests (2)', 'mac_asan_64_rel_tests_2', 'testers',
   'mac_asan_64_rel_trigger', notify_on_missing=True)
 F('mac_asan_64_rel_tests_2', mac().ChromiumASANFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=mac_asan_64_archive,
     tests=mac_asan_tests_2,
     factory_properties={
@@ -267,7 +267,7 @@ F('mac_asan_64_rel_tests_2', mac().ChromiumASANFactory(
 B('Mac ASan 64 Tests (3)', 'mac_asan_64_rel_tests_3', 'testers',
   'mac_asan_64_rel_trigger', notify_on_missing=True)
 F('mac_asan_64_rel_tests_3', mac().ChromiumASANFactory(
-    slave_type='Tester',
+    subordinate_type='Tester',
     build_url=mac_asan_64_archive,
     tests=mac_asan_tests_3,
     factory_properties={
@@ -278,5 +278,5 @@ F('mac_asan_64_rel_tests_3', mac().ChromiumASANFactory(
       'sharded_tests': sharded_tests,
     }))
 
-def Update(config, active_master, c):
+def Update(config, active_main, c):
   return helper.Update(c)

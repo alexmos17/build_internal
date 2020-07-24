@@ -19,8 +19,8 @@ import sys
 import tempfile
 
 from common import chromium_utils
-from slave import build_directory
-from slave import slave_utils
+from subordinate import build_directory
+from subordinate import subordinate_utils
 
 class StagingError(Exception): pass
 
@@ -241,7 +241,7 @@ def MakeVersionedArchive(zip_file, file_suffix, options):
 
 
 def UploadToGoogleStorage(versioned_file, revision_file, build_url, gs_acl):
-  if slave_utils.GSUtilCopyFile(versioned_file, build_url, gs_acl=gs_acl):
+  if subordinate_utils.GSUtilCopyFile(versioned_file, build_url, gs_acl=gs_acl):
     raise chromium_utils.ExternalError(
         'gsutil returned non-zero status when uploading %s to %s!' %
         (versioned_file, build_url))
@@ -251,7 +251,7 @@ def UploadToGoogleStorage(versioned_file, revision_file, build_url, gs_acl):
   # locally since that filename is used in the GS bucket as well.
   last_change_file = os.path.join(os.path.dirname(revision_file), 'LAST_CHANGE')
   shutil.copy(revision_file, last_change_file)
-  if slave_utils.GSUtilCopyFile(last_change_file, build_url, gs_acl=gs_acl):
+  if subordinate_utils.GSUtilCopyFile(last_change_file, build_url, gs_acl=gs_acl):
     raise chromium_utils.ExternalError(
         'gsutil returned non-zero status when uploading %s to %s!' %
         (last_change_file, build_url))
@@ -314,11 +314,11 @@ def Archive(options):
       options.src_dir, options.cros_board)
   build_dir = os.path.abspath(os.path.join(build_dir, options.target))
 
-  staging_dir = slave_utils.GetStagingDir(options.src_dir)
+  staging_dir = subordinate_utils.GetStagingDir(options.src_dir)
   chromium_utils.MakeParentDirectoriesWorldReadable(staging_dir)
 
   if not options.build_revision:
-    (build_revision, webkit_revision) = slave_utils.GetBuildRevisions(
+    (build_revision, webkit_revision) = subordinate_utils.GetBuildRevisions(
         options.src_dir, options.webkit_dir, options.revision_dir)
   else:
     build_revision = options.build_revision
@@ -327,7 +327,7 @@ def Archive(options):
   append_deps_patch_sha = options.factory_properties.get(
       'append_deps_patch_sha')
 
-  unversioned_base_name, version_suffix = slave_utils.GetZipFileNames(
+  unversioned_base_name, version_suffix = subordinate_utils.GetZipFileNames(
       options.build_properties, build_revision, webkit_revision,
       use_try_buildnumber=(not append_deps_patch_sha))
 
@@ -398,10 +398,10 @@ def Archive(options):
     zip_url = UploadToGoogleStorage(
         versioned_file, revision_file, build_url, gs_acl)
   else:
-    slavename = options.build_properties['slavename']
+    subordinatename = options.build_properties['subordinatename']
     staging_path = (
         os.path.splitdrive(versioned_file)[1].replace(os.path.sep, '/'))
-    zip_url = 'http://' + slavename + staging_path
+    zip_url = 'http://' + subordinatename + staging_path
 
   print '@@@SET_BUILD_PROPERTY@build_archive_url@"%s"@@@' % zip_url
 

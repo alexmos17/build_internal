@@ -18,7 +18,7 @@ class classproperty(object):
     return self.getter(owner)
 
 
-class Master(object):
+class Main(object):
   # Repository URLs used by the SVNPoller and 'gclient config'.
   server_url = 'http://src.chromium.org'
   repo_root = '/svn'
@@ -38,12 +38,12 @@ class Master(object):
   # Perf Dashboard upload URL.
   dashboard_upload_url = 'https://chromeperf.appspot.com'
 
-  # Actually for Chromium OS slaves.
+  # Actually for Chromium OS subordinates.
   chromeos_url = git_server_url + '/chromiumos.git'
 
   # Default domain for emails to come from and
   # domains to which emails can be sent.
-  master_domain = 'example.com'
+  main_domain = 'example.com'
   permitted_domains = ('example.com',)
 
   # Your smtp server to enable mail notifications.
@@ -59,42 +59,42 @@ class Master(object):
   swarm_hashtable_server_dev_internal = 'http://fake.swarm.hashtable.server.com'
   trunk_internal_url = None
   trunk_internal_url_src = None
-  slave_internal_url = None
+  subordinate_internal_url = None
   git_internal_server_url = None
   syzygy_internal_url = None
   v8_internal_url = None
 
 
   class Base(object):
-    """Master base template.
-    Contains stubs for variables that all masters must define."""
-    # Master address. You should probably copy this file in another svn repo
-    # so you can override this value on both the slaves and the master.
-    master_host = 'localhost'
-    # Only report that we are running on a master if the master_host (even when
-    # master_host is overridden by a subclass) is the same as the current host.
+    """Main base template.
+    Contains stubs for variables that all mains must define."""
+    # Main address. You should probably copy this file in another svn repo
+    # so you can override this value on both the subordinates and the main.
+    main_host = 'localhost'
+    # Only report that we are running on a main if the main_host (even when
+    # main_host is overridden by a subclass) is the same as the current host.
     @classproperty
     def is_production_host(cls):
-      return socket.getfqdn() == cls.master_host
+      return socket.getfqdn() == cls.main_host
     # 'from:' field for emails sent from the server.
     from_address = 'nobody@example.com'
     # Additional email addresses to send gatekeeper (automatic tree closage)
-    # notifications. Unnecessary for experimental masters and try servers.
+    # notifications. Unnecessary for experimental mains and try servers.
     tree_closing_notification_recipients = []
     # For the following values, they are used only if non-0. Do not set them
-    # here, set them in the actual master configuration class:
+    # here, set them in the actual main configuration class:
     # Used for the waterfall URL and the waterfall's WebStatus object.
-    master_port = 0
-    # Which port slaves use to connect to the master.
-    slave_port = 0
+    main_port = 0
+    # Which port subordinates use to connect to the main.
+    subordinate_port = 0
     # The alternate read-only page. Optional.
-    master_port_alt = 0
+    main_port_alt = 0
 
-  ## Per-master configs.
+  ## Per-main configs.
 
-  class Master1(Base):
-    """Chromium master."""
-    master_host = 'master1.golo.chromium.org'
+  class Main1(Base):
+    """Chromium main."""
+    main_host = 'main1.golo.chromium.org'
     from_address = 'buildbot@chromium.org'
     tree_closing_notification_recipients = [
         'chromium-build-failure@chromium-gatekeeper-sentry.appspotmail.com']
@@ -104,37 +104,37 @@ class Master(object):
     last_good_url = base_app_url + '/lkgr'
     last_good_blink_url = 'http://blink-status.appspot.com/lkgr'
 
-  class Master2(Base):
-    """Chromeos master."""
-    master_host = 'master2.golo.chromium.org'
+  class Main2(Base):
+    """Chromeos main."""
+    main_host = 'main2.golo.chromium.org'
     tree_closing_notification_recipients = [
         'chromeos-build-failures@google.com']
     from_address = 'buildbot@chromium.org'
 
-  class Master3(Base):
-    """Client master."""
-    master_host = 'master3.golo.chromium.org'
+  class Main3(Base):
+    """Client main."""
+    main_host = 'main3.golo.chromium.org'
     tree_closing_notification_recipients = []
     from_address = 'buildbot@chromium.org'
 
-  class Master4(Base):
-    """Try server master."""
-    master_host = 'master4.golo.chromium.org'
+  class Main4(Base):
+    """Try server main."""
+    main_host = 'main4.golo.chromium.org'
     tree_closing_notification_recipients = []
     from_address = 'tryserver@chromium.org'
     code_review_site = 'https://codereview.chromium.org'
 
-  class Master4a(Base):
-    """Try server master."""
-    master_host = 'master4a.golo.chromium.org'
+  class Main4a(Base):
+    """Try server main."""
+    main_host = 'main4a.golo.chromium.org'
     tree_closing_notification_recipients = []
     from_address = 'tryserver@chromium.org'
     code_review_site = 'https://codereview.chromium.org'
 
   ## Native Client related
 
-  class NaClBase(Master3):
-    """Base class for Native Client masters."""
+  class NaClBase(Main3):
+    """Base class for Native Client mains."""
     tree_closing_notification_recipients = ['bradnelson@chromium.org']
     base_app_url = 'https://nativeclient-status.appspot.com'
     tree_status_url = base_app_url + '/status'
@@ -144,8 +144,8 @@ class Master(object):
 
   ## ChromiumOS related
 
-  class ChromiumOSBase(Master2):
-    """Base class for ChromiumOS masters"""
+  class ChromiumOSBase(Main2):
+    """Base class for ChromiumOS mains"""
     base_app_url = 'https://chromiumos-status.appspot.com'
     tree_status_url = base_app_url + '/status'
     store_revisions_url = base_app_url + '/revisions'

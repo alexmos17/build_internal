@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 from contextlib import contextmanager
-from slave import recipe_api
+from subordinate import recipe_api
 
 DEPS = [
   'chromium_android',
@@ -162,9 +162,9 @@ BUILDERS = {
 }
 
 def GenSteps(api):
-  mastername = api.properties['mastername']
+  mainname = api.properties['mainname']
   buildername = api.properties['buildername']
-  bot_config = BUILDERS[mastername][buildername]
+  bot_config = BUILDERS[mainname][buildername]
   droid = api.chromium_android
 
   default_kwargs = {
@@ -241,52 +241,52 @@ def _sanitize_nonalpha(text):
 
 def GenTests(api):
   # tests bots in BUILDERS
-  for mastername, builders in BUILDERS.iteritems():
+  for mainname, builders in BUILDERS.iteritems():
     for buildername in builders:
       yield (
-        api.test('full_%s_%s' % (_sanitize_nonalpha(mastername),
+        api.test('full_%s_%s' % (_sanitize_nonalpha(mainname),
                                  _sanitize_nonalpha(buildername))) +
         api.properties.generic(buildername=buildername,
             repository='svn://svn.chromium.org/chrome/trunk/src',
             buildnumber=257,
-            mastername=mastername,
+            mainname=mainname,
             issue='8675309',
             patchset='1',
             revision='267739',
             got_revision='267739'))
 
-  def step_failure(mastername, buildername, steps, tryserver=False):
+  def step_failure(mainname, buildername, steps, tryserver=False):
     props = api.properties.tryserver if tryserver else api.properties.generic
     return (
       api.test('%s_%s_fail_%s' % (
-        _sanitize_nonalpha(mastername),
+        _sanitize_nonalpha(mainname),
         _sanitize_nonalpha(buildername),
         '_'.join(_sanitize_nonalpha(step) for step in steps))) +
-      props(mastername=mastername, buildername=buildername) +
+      props(mainname=mainname, buildername=buildername) +
       reduce(lambda a, b: a + b,
              (api.step_data(step, retcode=1) for step in steps))
     )
 
-  yield step_failure(mastername='chromium.fyi',
+  yield step_failure(mainname='chromium.fyi',
                      buildername='Android x64 Builder (dbg)',
                      steps=['findbugs'])
-  yield step_failure(mastername='chromium.fyi',
+  yield step_failure(mainname='chromium.fyi',
                      buildername='Android x64 Builder (dbg)',
                      steps=['check licenses'])
 
-  yield step_failure(mastername='tryserver.chromium.linux',
+  yield step_failure(mainname='tryserver.chromium.linux',
                      buildername='android_clang_dbg_recipe',
                      steps=['compile (with patch)'],
                      tryserver=True)
-  yield step_failure(mastername='tryserver.chromium.linux',
+  yield step_failure(mainname='tryserver.chromium.linux',
                      buildername='android_clang_dbg_recipe',
                      steps=['compile (with patch)', 'compile (without patch)'],
                      tryserver=True)
-  yield step_failure(mastername='tryserver.chromium.linux',
+  yield step_failure(mainname='tryserver.chromium.linux',
                      buildername='android_clang_dbg_recipe',
                      steps=['findbugs'],
                      tryserver=True)
-  yield step_failure(mastername='tryserver.chromium.linux',
+  yield step_failure(mainname='tryserver.chromium.linux',
                      buildername='android_clang_dbg_recipe',
                      steps=['check licenses'],
                      tryserver=True)

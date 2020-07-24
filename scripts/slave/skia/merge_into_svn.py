@@ -6,7 +6,7 @@
 """Commit all files within a directory to an SVN repository.
 
 To test:
-  cd .../build/scripts/slave/skia
+  cd .../build/scripts/subordinate/skia
   echo "SvnUsername" >../../../site_config/.svnusername
   echo "SvnPassword" >../../../site_config/.svnpassword
   rm -rf /tmp/svnmerge
@@ -28,7 +28,7 @@ import shutil
 import sys
 import tempfile
 
-from slave import svn
+from subordinate import svn
 
 
 def ReadFirstLineOfFileAsString(filename):
@@ -62,7 +62,7 @@ def MergeIntoSvn(options):
   @param options struct of command-line option values from optparse
   """
   # Get path to SVN username and password files.
-  # (Patterned after slave_utils.py's logic to find the .boto file.)
+  # (Patterned after subordinate_utils.py's logic to find the .boto file.)
   site_config_path = os.path.join(os.path.dirname(__file__),
                                   '..', '..', '..', 'site_config')
   svn_username_path = os.path.join(site_config_path, options.svn_username_file)

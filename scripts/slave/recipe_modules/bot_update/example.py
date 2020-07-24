@@ -25,49 +25,49 @@ def GenSteps(api):
 
 def GenTests(api):
   yield api.test('basic') + api.properties(
-      mastername='chromium.linux',
+      mainname='chromium.linux',
       buildername='Linux Builder',
-      slavename='totallyaslave-m1',
+      subordinatename='totallyasubordinate-m1',
   )
   yield api.test('basic_with_branch_heads') + api.properties(
-      mastername='chromium.linux',
+      mainname='chromium.linux',
       buildername='Linux Builder',
-      slavename='totallyaslave-m1',
+      subordinatename='totallyasubordinate-m1',
       with_branch_heads=True,
   )
   yield api.test('tryjob') + api.properties(
-      mastername='tryserver.chromium.linux',
+      mainname='tryserver.chromium.linux',
       buildername='linux_rel',
-      slavename='totallyaslave-c4',
+      subordinatename='totallyasubordinate-c4',
       issue=12345,
       patchset=654321,
       patch_url='http://src.chromium.org/foo/bar'
   )
   yield api.test('tryjob_fail') + api.properties(
-      mastername='tryserver.chromium.linux',
+      mainname='tryserver.chromium.linux',
       buildername='linux_rel',
-      slavename='totallyaslave-c4',
+      subordinatename='totallyasubordinate-c4',
       issue=12345,
       patchset=654321,
       patch_url='http://src.chromium.org/foo/bar',
   ) + api.step_data('bot_update', retcode=1)
   yield api.test('tryjob_fail_patch') + api.properties(
-      mastername='tryserver.chromium.linux',
+      mainname='tryserver.chromium.linux',
       buildername='linux_rel',
-      slavename='totallyaslave-c4',
+      subordinatename='totallyasubordinate-c4',
       issue=12345,
       patchset=654321,
       patch_url='http://src.chromium.org/foo/bar',
       fail_patch=True,
   ) + api.step_data('bot_update', retcode=88)
   yield api.test('forced') + api.properties(
-      mastername='experimental',
+      mainname='experimental',
       buildername='Experimental Builder',
-      slavename='somehost',
+      subordinatename='somehost',
       force=1
   )
   yield api.test('off') + api.properties(
-      mastername='experimental',
+      mainname='experimental',
       buildername='Experimental Builder',
-      slavename='somehost',
+      subordinatename='somehost',
   )

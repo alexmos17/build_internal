@@ -23,7 +23,7 @@ OS_MAPPING = {
 }
 
 
-# This should match build/scripts/master/factory/swarming_factory.py until the
+# This should match build/scripts/main/factory/swarming_factory.py until the
 # code there is deleted.
 # The goal here is to take ~5m of actual test run per shard, e.g. the 'RunTest'
 # section in the logs, so that the trade-off of setup time overhead vs latency
@@ -82,7 +82,7 @@ def build_to_priority(build_properties):
   # TODO(maruel): It's a tad annoying to use the url as a signal here. It is
   # just too easy to forget to update this list so find a way to specify the
   # priority more clearly.
-  ci_masters = (
+  ci_mains = (
       '/chromium/',
       '/chromium.chrome/',
       '/chromium.chromiumos/',
@@ -91,18 +91,18 @@ def build_to_priority(build_properties):
       '/chromium.memory/',
       '/chromium.win/',
   )
-  try_masters = (
+  try_mains = (
       '/tryserver.chromium.linux/',
       '/tryserver.chromium.mac/',
       '/tryserver.chromium.win/',
       '/tryserver.nacl/',
   )
 
-  if url.endswith(ci_masters):
-    # Continuous integration master.
+  if url.endswith(ci_mains):
+    # Continuous integration main.
     return 10
 
-  if url.endswith(try_masters):
+  if url.endswith(try_mains):
     requester = build_properties.get('requester')
     if requester == 'commit-bot@chromium.org':
       # Commit queue job.

@@ -6,7 +6,7 @@
 
 import os
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 class RepoApi(recipe_api.RecipeApi):
   """Provides methods to encapsulate repo operations."""

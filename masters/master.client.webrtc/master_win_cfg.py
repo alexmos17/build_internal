@@ -4,7 +4,7 @@
 
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-from master.factory import annotator_factory
+from main.factory import annotator_factory
 
 m_annotator = annotator_factory.AnnotatorFactory()
 
@@ -25,8 +25,8 @@ def Update(c):
       ]),
   ])
 
-  # 'slavebuilddir' below is used to reduce the number of checkouts since some
-  # of the builders are pooled over multiple slave machines.
+  # 'subordinatebuilddir' below is used to reduce the number of checkouts since some
+  # of the builders are pooled over multiple subordinate machines.
   specs = [
     {'name': 'Win32 Debug'},
     {'name': 'Win32 Release'},
@@ -35,19 +35,19 @@ def Update(c):
     {
       'name': 'Win32 Release [large tests]',
       'category': 'compile|baremetal|windows',
-      'slavebuilddir': 'win_baremetal',
+      'subordinatebuilddir': 'win_baremetal',
     },
     {
       'name': 'Win DrMemory Light',
       'category': 'compile',
-      'slavebuilddir': 'win-drmem',
+      'subordinatebuilddir': 'win-drmem',
     },
     {
       'name': 'Win DrMemory Full',
       'category': 'compile',
-      'slavebuilddir': 'win-drmem',
+      'subordinatebuilddir': 'win-drmem',
     },
-    {'name': 'Win SyzyASan', 'slavebuilddir': 'win-syzyasan'},
+    {'name': 'Win SyzyASan', 'subordinatebuilddir': 'win-syzyasan'},
   ]
 
   c['builders'].extend([
@@ -56,6 +56,6 @@ def Update(c):
         'factory': m_annotator.BaseFactory('webrtc/standalone'),
         'notify_on_missing': True,
         'category': spec.get('category', 'compile|testers|windows'),
-        'slavebuilddir': spec.get('slavebuilddir', 'win'),
+        'subordinatebuilddir': spec.get('subordinatebuilddir', 'win'),
       } for spec in specs
   ])

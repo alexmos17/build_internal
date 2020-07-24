@@ -20,15 +20,15 @@ DEPS = [
 def GenSteps(api):
   branch = 'stable'
   if api.properties.get('target_environment') == 'canary':
-    branch = 'master'
+    branch = 'main'
   api.swarming_client.checkout(branch, can_fail_build=False)
   api.swarming.check_client_version()
   script = api.path['build'].join(
-      'scripts', 'slave', 'swarming', 'job_runs_fine.py')
+      'scripts', 'subordinate', 'swarming', 'job_runs_fine.py')
   args = []
   if api.properties.get('target_environment') == 'canary':
     args = ['--canary']
-  api.python('job_runs_fine.py', script, args=args, cwd=api.path['slave_build'])
+  api.python('job_runs_fine.py', script, args=args, cwd=api.path['subordinate_build'])
 
 
 def GenTests(api):

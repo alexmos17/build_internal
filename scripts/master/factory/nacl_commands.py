@@ -8,8 +8,8 @@ Contains the Native Client specific commands. Based on commands.py"""
 
 from buildbot.process.properties import WithProperties
 
-from master import chromium_step
-from master.factory import commands
+from main import chromium_step
+from main.factory import commands
 
 
 class NativeClientCommands(commands.FactoryCommands):
@@ -28,8 +28,8 @@ class NativeClientCommands(commands.FactoryCommands):
                 '%(buildername:-None)s'),
             'triggered_by_buildnumber': WithProperties(
                 '%(buildnumber:-None)s'),
-            'triggered_by_slavename': WithProperties(
-                '%(slavename:-None)s'),
+            'triggered_by_subordinatename': WithProperties(
+                '%(subordinatename:-None)s'),
             'triggered_by_revision': WithProperties(
                 '%(revision:-None)s'),
         },
@@ -46,7 +46,7 @@ class NativeClientCommands(commands.FactoryCommands):
     env['BUILDBOT_TRIGGERED_BY_BUILDNUMBER'] = WithProperties(
         '%(triggered_by_buildnumber:-None)s')
     env['BUILDBOT_TRIGGERED_BY_SLAVENAME'] = WithProperties(
-        '%(triggered_by_slavename:-None)s')
+        '%(triggered_by_subordinatename:-None)s')
     if usePython:
       command = [self._python] + command
     self._factory.addStep(chromium_step.AnnotatedCommand,

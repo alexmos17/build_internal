@@ -28,7 +28,7 @@ class FakeSwarmGetResultsModule(object):
 sys.modules['swarm_get_results'] = FakeSwarmGetResultsModule()
 
 
-import slave.swarming.get_swarm_results_shim as swarm_results
+import subordinate.swarming.get_swarm_results_shim as swarm_results
 
 
 RUN_TEST_OUTPUT = (
@@ -50,7 +50,7 @@ RUN_TEST_OUTPUT_FAILURE = (
 [ RUN      ] StaticCookiePolicyTest.AllowAllCookiesTest
 [       OK ] StaticCookiePolicyTest.AllowAllCookiesTest (0 ms)
 [ RUN      ] StaticCookiePolicyTest.BlockAllCookiesTest
-E:\b\build\slave\win\build\src\chrome\test.cc: error: Value of: result()
+E:\b\build\subordinate\win\build\src\chrome\test.cc: error: Value of: result()
   Actual: false
 Expected: true
 [  FAILED  ] StaticCookiePolicyTest.BlockAllCookiesTest (0 ms)

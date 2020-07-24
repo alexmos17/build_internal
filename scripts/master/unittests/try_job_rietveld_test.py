@@ -19,13 +19,13 @@ from testing_support import auto_stub
 from twisted.internet import defer
 from twisted.web import client
 
-from master import master_utils
-from master import try_job_rietveld
-from master.builders_pools import BuildersPools
+from main import main_utils
+from main import try_job_rietveld
+from main.builders_pools import BuildersPools
 
 
 TEST_BASE_URL = ('https://codereview.chromium.org/get_pending_try_patchsets?'
-                 'limit=1000&offset=1&master=tryserver.chromium.linux')
+                 'limit=1000&offset=1&main=tryserver.chromium.linux')
 
 
 # Create timestamps both with microseconds=0 and !=0.
@@ -72,19 +72,19 @@ class MockDBCollection(object):
       self.buildsets = MockBuildSetsDB()
 
 
-class MockBotMaster(object):
+class MockBotMain(object):
 
   def __init__(self):
     self.builders = {}
 
 
-class MockMaster(object):
+class MockMain(object):
 
   db = None
 
   def __init__(self):
     self.db = MockDBCollection()
-    self.botmaster = MockBotMaster()
+    self.botmain = MockBotMain()
 
 
 class MockTryJobRietveld(object):
@@ -141,13 +141,13 @@ class MockRietveldPollerWithCache(object):
 
 class MockServiceParent(object):
 
-  master = MockMaster()
+  main = MockMain()
 
   def __init__(self):
     pass
 
   def addService(self, service):
-    service.master = MockServiceParent.master
+    service.main = MockServiceParent.main
 
 
 class RietveldPollerWithCacheTest(auto_stub.TestCase):
@@ -189,19 +189,19 @@ class RietveldPollerWithCacheTest(auto_stub.TestCase):
     self._numRequests = 0
     self._cursors = {}
     self._mockTJR = MockTryJobRietveld()
-    self._mockMaster = MockMaster()
+    self._mockMain = MockMain()
     super(RietveldPollerWithCacheTest, self).setUp()
 
   def testRequestsAllPagesWithJobsFromRietveld(self):
     poller = try_job_rietveld._RietveldPollerWithCache(TEST_BASE_URL, 60)
-    poller.master = self._mockMaster
+    poller.main = self._mockMain
     poller.setServiceParent(self._mockTJR)
     poller.poll()
     self.assertEqual(self._numRequests, len(TEST_RIETVELD_PAGES) + 1)
 
   def testSubmitsNewJobsAndIgnoresOldOnes(self):
     poller = try_job_rietveld._RietveldPollerWithCache(TEST_BASE_URL, 60)
-    poller.master = self._mockMaster
+    poller.main = self._mockMain
     poller.setServiceParent(self._mockTJR)
     poller.poll()
     self.assertEqual(len(self._mockTJR.submitted_jobs), 2)
@@ -210,18 +210,18 @@ class RietveldPollerWithCacheTest(auto_stub.TestCase):
 
   def testDoesNotResubmitPreviousJobs(self):
     poller = try_job_rietveld._RietveldPollerWithCache(TEST_BASE_URL, 60)
-    poller.master = self._mockMaster
+    poller.main = self._mockMain
     poller.setServiceParent(self._mockTJR)
     poller.poll()
     self._mockTJR.clear()
     poller.poll()
     self.assertEquals(len(self._mockTJR.submitted_jobs), 0)
 
-  def testDoesNotResubmitJobsAlreadyOnMaster(self):
+  def testDoesNotResubmitJobsAlreadyOnMain(self):
     poller = try_job_rietveld._RietveldPollerWithCache(TEST_BASE_URL, 60)
-    self._mockMaster.db.buildsets.addBuildSetProperties(
+    self._mockMain.db.buildsets.addBuildSetProperties(
         42, {'try_job_key': ('test_key_1', 'Try bot')})
-    poller.master = self._mockMaster
+    poller.main = self._mockMain
     poller.setServiceParent(self._mockTJR)
     poller.poll()
     self.assertEquals(len(self._mockTJR.submitted_jobs), 1)
@@ -230,11 +230,11 @@ class RietveldPollerWithCacheTest(auto_stub.TestCase):
   def testShouldLimitNumberOfBuildsetsUsedForInit(self):
     self.mock(try_job_rietveld, 'MAX_RECENT_BUILDSETS_TO_INIT_CACHE', 1)
     poller = try_job_rietveld._RietveldPollerWithCache(TEST_BASE_URL, 60)
-    self._mockMaster.db.buildsets.addBuildSetProperties(
+    self._mockMain.db.buildsets.addBuildSetProperties(
         42, {'try_job_key': ('test_key_1', 'Try bot')})
-    self._mockMaster.db.buildsets.addBuildSetProperties(
+    self._mockMain.db.buildsets.addBuildSetProperties(
         55, {'try_job_key': ('test_key_2', 'Try bot')})
-    poller.master = self._mockMaster
+    poller.main = self._mockMain
     poller.setServiceParent(self._mockTJR)
     poller.poll()
     self.assertEquals(len(self._mockTJR.submitted_jobs), 1)
@@ -243,7 +243,7 @@ class RietveldPollerWithCacheTest(auto_stub.TestCase):
   def testDoesNotPerformPollWhenThereAreNoValidUsers(self):
     self.mock(self._mockTJR, 'has_valid_user_list', lambda: False)
     poller = try_job_rietveld._RietveldPollerWithCache(TEST_BASE_URL, 60)
-    poller.master = self._mockMaster
+    poller.main = self._mockMain
     poller.setServiceParent(self._mockTJR)
     poller.poll()
     self.assertEqual(len(self._mockTJR.submitted_jobs), 0)
@@ -255,14 +255,14 @@ class TryJobRietveldTest(auto_stub.TestCase):
     self.mock(try_job_rietveld, '_ValidUserPoller', MockValidUserPoller)
     self.mock(try_job_rietveld, '_RietveldPollerWithCache',
               MockRietveldPollerWithCache)
-    self.mock(master_utils, 'GetMastername', lambda: 'tryserver.test')
+    self.mock(main_utils, 'GetMainname', lambda: 'tryserver.test')
     self.tjr = try_job_rietveld.TryJobRietveld(
         name='test_try_job_rietveld',
         last_good_urls={'test_project': 'http://www.example.com/lkgr'},
         code_review_sites={'test_project': 'http://www.example.com'},
         pools=BuildersPools('test_project'),
         project='test_project',
-        filter_master=True)
+        filter_main=True)
 
   def testCorrectlyComputesValidityOfTheUserList(self):
     MockValidUserPoller.mockValid = False
@@ -274,7 +274,7 @@ class TryJobRietveldTest(auto_stub.TestCase):
   def testCorrectlyFormsTheEndpointForRietveldPoller(self):
     self.assertEqual(MockRietveldPollerWithCache.endpoint,
                      'http://www.example.com/get_pending_try_patchsets'
-                     '?limit=1000&master=tryserver.test')
+                     '?limit=1000&main=tryserver.test')
 
   def testSetsServiceParentOnUserAndRietveldPollers(self):
     mockServiceParent = MockServiceParent()

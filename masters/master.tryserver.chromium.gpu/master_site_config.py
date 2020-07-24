@@ -2,15 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
-class GpuTryServer(Master.Master4):
+class GpuTryServer(Main.Main4):
   project_name = 'Chromium GPU Try Server'
-  master_port = 8021
-  slave_port = 8121
-  master_port_alt = 8221
+  main_port = 8021
+  subordinate_port = 8121
+  main_port_alt = 8221
   reply_to = 'chrome-troopers+tryserver@google.com'
   base_app_url = 'https://chromium-status.appspot.com'
   tree_status_url = base_app_url + '/status'

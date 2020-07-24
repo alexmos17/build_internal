@@ -133,10 +133,10 @@ def path_to_step(request, stepstatus):
     return (path_to_build(request, stepstatus.getBuild()) +
             "/steps/%s" % urllib.quote(stepstatus.getName(), safe=''))
 
-def path_to_slave(request, slave):
+def path_to_subordinate(request, subordinate):
     return (path_to_root(request) +
-            "buildslaves/" +
-            urllib.quote(slave.getName(), safe=''))
+            "buildsubordinates/" +
+            urllib.quote(subordinate.getName(), safe=''))
 
 def path_to_change(request, change):
     return (path_to_root(request) +
@@ -181,8 +181,8 @@ class AccessorMixin(object):
     def getAuthz(self, request):
         return request.site.buildbot_service.authz
 
-    def getBuildmaster(self, request):
-        return request.site.buildbot_service.master
+    def getBuildmain(self, request):
+        return request.site.buildbot_service.main
 
 
 class ContextMixin(AccessorMixin):

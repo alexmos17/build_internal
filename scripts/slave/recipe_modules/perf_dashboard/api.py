@@ -4,24 +4,24 @@
 
 import urllib
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 class PerfDashboardApi(recipe_api.RecipeApi):
   """Provides steps to take a list of perf points and post them to the
   Chromium Perf Dashboard.  Can also use the test url for testing purposes."""
 
   def get_skeleton_point(self, test, revision, value):
-    # TODO: masterid is really mastername
+    # TODO: mainid is really mainname
     assert(test != '')
     assert(revision != '')
     assert(value != '')
     return {
-      "master": self.m.properties['mastername'],
-      "bot" : self.m.properties['slavename'],
+      "main": self.m.properties['mainname'],
+      "bot" : self.m.properties['subordinatename'],
       "test" : test,
       "revision" : revision,
       "value" : value,
-      "masterid" : self.m.properties['mastername'],
+      "mainid" : self.m.properties['mainname'],
       "buildername" : self.m.properties['buildername'],
       "buildnumber" : self.m.properties['buildnumber']
     }
@@ -38,14 +38,14 @@ class PerfDashboardApi(recipe_api.RecipeApi):
                     step_result.presentation from a followup_fn of a step.
       test: Slash-separated test path.
       revision: The build revision, e.g. got_revision from the update step.
-      bot: The slave name.
+      bot: The subordinate name.
     """
     assert presentation
     assert test
     assert revision
     params = urllib.urlencode({
-      'masters' : self.m.properties['mastername'],
-      'bots': bot or self.m.properties['slavename'],
+      'mains' : self.m.properties['mainname'],
+      'bots': bot or self.m.properties['subordinatename'],
       'tests': test,
       'rev': revision,
     })

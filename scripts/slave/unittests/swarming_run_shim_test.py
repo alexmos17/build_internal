@@ -16,7 +16,7 @@ import test_env  # pylint: disable=W0403,W0611
 # In depot_tools/
 from testing_support import auto_stub
 
-from slave.swarming import swarming_run_shim
+from subordinate.swarming import swarming_run_shim
 
 
 # pylint: disable=W0212
@@ -306,7 +306,7 @@ class SwarmingRunTest(auto_stub.TestCase):
         'Selected OS: Mac\n')
     self.assertEqual(header, actual[:len(header)])
     actual = actual[len(header):]
-    # Sadly, master/chromium_step.py AnnotationObserver is hard to extract so
+    # Sadly, main/chromium_step.py AnnotationObserver is hard to extract so
     # we have to parse manually.
     expected = (
         u'\n@@@SEED_STEP base_test@@@\n'

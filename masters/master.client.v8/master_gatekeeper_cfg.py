@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import gatekeeper
-from master import master_utils
+from main import gatekeeper
+from main import main_utils
 
 # This is the list of the builder categories and the corresponding critical
 # steps. If one critical step fails, gatekeeper will close the tree
@@ -35,15 +35,15 @@ exclusions = {
 forgiving_steps = ['update_scripts', 'update', 'svnkill', 'taskkill',
                    'gclient_revert']
 
-def Update(config, active_master, c):
+def Update(config, active_main, c):
   c['status'].append(gatekeeper.GateKeeper(
-      fromaddr=active_master.from_address,
+      fromaddr=active_main.from_address,
       categories_steps=categories_steps,
       exclusions=exclusions,
-      relayhost=config.Master.smtp,
+      relayhost=config.Main.smtp,
       subject='buildbot %(result)s in %(projectName)s on %(builder)s, '
               'revision %(revision)s',
-      extraRecipients=active_master.tree_closing_notification_recipients,
+      extraRecipients=active_main.tree_closing_notification_recipients,
       lookup='google.com',
       forgiving_steps=forgiving_steps,
-      tree_status_url=active_master.tree_status_url))
+      tree_status_url=active_main.tree_status_url))

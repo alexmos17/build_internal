@@ -2,38 +2,38 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Utility class to build the v8 master BuildFactory's.
+"""Utility class to build the v8 main BuildFactory's.
 
 Based on gclient_factory.py and adds v8-specific steps."""
 
-from master.factory import v8_commands
-from master.factory import gclient_factory
+from main.factory import v8_commands
+from main.factory import gclient_factory
 import config
 
 
 class V8Factory(gclient_factory.GClientFactory):
-  """Encapsulates data and methods common to the v8 master.cfg files."""
+  """Encapsulates data and methods common to the v8 main.cfg files."""
 
-  DEFAULT_TARGET_PLATFORM = config.Master.default_platform
+  DEFAULT_TARGET_PLATFORM = config.Main.default_platform
 
   CUSTOM_DEPS_VALGRIND = ('src/third_party/valgrind',
-                          config.Master.trunk_url +
+                          config.Main.trunk_url +
                           '/deps/third_party/valgrind/binaries')
 
   # TODO(jkummerow): Figure out if this is actually needed.
   CUSTOM_DEPS_WIN7SDK = (
       'third_party/win7sdk',
       '%s/third_party/platformsdk_win7/files' %
-      config.Master.trunk_internal_url)
+      config.Main.trunk_internal_url)
 
   CUSTOM_DEPS_MOZILLA = ('v8/test/mozilla/data',
-                          config.Master.trunk_url +
+                          config.Main.trunk_url +
                           '/deps/third_party/mozilla-tests')
 
   def __init__(self, build_dir, target_platform=None,
                branch='branches/bleeding_edge',
                custom_deps_list=None):
-    self.checkout_url = config.Master.v8_url + '/' + branch
+    self.checkout_url = config.Main.v8_url + '/' + branch
 
     main = gclient_factory.GClientSolution(self.checkout_url, name='v8',
                                            custom_deps_list=custom_deps_list)
@@ -76,7 +76,7 @@ class V8Factory(gclient_factory.GClientFactory):
     if R('simpleleak'): f.AddSimpleLeakTest()
 
   def V8Factory(self, target='Release', clobber=False, tests=None, mode=None,
-                slave_type='BuilderTester', options=None, compile_timeout=1200,
+                subordinate_type='BuilderTester', options=None, compile_timeout=1200,
                 build_url=None, project=None, factory_properties=None,
                 target_arch=None, shard_count=1,
                 shard_run=1, shell_flags=None, isolates=False,
@@ -108,7 +108,7 @@ class V8Factory(gclient_factory.GClientFactory):
 
     factory = self.BuildFactory(target=target, clobber=clobber, tests=tests,
                                 mode=mode,
-                                slave_type=slave_type,
+                                subordinate_type=subordinate_type,
                                 options=options,
                                 compile_timeout=compile_timeout,
                                 build_url=build_url,
@@ -138,7 +138,7 @@ class V8Factory(gclient_factory.GClientFactory):
           extra_archive_paths=factory_properties.get('extra_archive_paths'))
 
     # Add a trigger step if needed.
-    self.TriggerFactory(factory, slave_type=slave_type,
+    self.TriggerFactory(factory, subordinate_type=subordinate_type,
                         factory_properties=factory_properties)
 
     # Add all the tests.
@@ -148,7 +148,7 @@ class V8Factory(gclient_factory.GClientFactory):
   def V8LinuxBuilderFactory(self, target, target_arch, gclient_env, build_url,
                             trigger):
     return self.V8Factory(
-        slave_type='Builder',
+        subordinate_type='Builder',
         options=['--build-tool=make', '--src-dir=v8'],
         target=target,
         factory_properties={
@@ -173,7 +173,7 @@ class V8Factory(gclient_factory.GClientFactory):
     factory_properties = factory_properties or {}
     factory_properties['extract_build_src_dir'] = 'v8'
     return self.V8Factory(
-        slave_type='Tester',
+        subordinate_type='Tester',
         target=target,
         build_url=build_url,
         factory_properties=factory_properties,

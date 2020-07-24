@@ -5,7 +5,7 @@
 from buildbot.changes.filter import ChangeFilter
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-from master.factory import syzygy_factory
+from main.factory import syzygy_factory
 
 
 def win():
@@ -49,6 +49,6 @@ smoke_test_builder = {
 }
 
 
-def Update(config, active_master, c):
+def Update(config, active_main, c):
   c['schedulers'].append(binaries_scheduler)
   c['builders'].append(smoke_test_builder)

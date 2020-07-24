@@ -19,7 +19,7 @@ import stat
 import subprocess
 import sys
 
-from slave import build_directory
+from subordinate import build_directory
 
 def get_size(filename):
   return os.stat(filename)[stat.ST_SIZE]

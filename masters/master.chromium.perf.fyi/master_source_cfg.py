@@ -2,11 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master.chromium_git_poller_bb8 import ChromiumGitPoller
+from main.chromium_git_poller_bb8 import ChromiumGitPoller
 
-def Update(config, active_master, c):
+def Update(config, active_main, c):
   chromium_src_poller = ChromiumGitPoller(
       repourl='https://chromium.googlesource.com/chromium/src.git',
-      branch='master',
+      branch='main',
       pollinterval=60)
   c['change_source'].append(chromium_src_poller)

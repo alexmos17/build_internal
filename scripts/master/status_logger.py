@@ -76,9 +76,9 @@ class StatusEventLogger(StatusReceiverMultiService):
     self.log('buildsetSubmitted', '%r, %s', buildset, reason)
 
   def builderAdded(self, builderName, builder):
-    # Use slavenames rather than getSlaves() to just get strings.
-    slaves = builder.slavenames
-    self.log('builderAdded', '%s, %r', builderName, slaves)
+    # Use subordinatenames rather than getSubordinates() to just get strings.
+    subordinates = builder.subordinatenames
+    self.log('builderAdded', '%s, %r', builderName, subordinates)
     # Must return self in order to subscribe to builderChangedState and
     # buildStarted/Finished events.
     return self
@@ -88,8 +88,8 @@ class StatusEventLogger(StatusReceiverMultiService):
 
   def buildStarted(self, builderName, build):
     build_number = build.getNumber()
-    slave = build.getSlavename()
-    self.log('buildStarted', '%s, %d, %s', builderName, build_number, slave)
+    subordinate = build.getSubordinatename()
+    self.log('buildStarted', '%s, %d, %s', builderName, build_number, subordinate)
     # Must return self in order to subscribe to stepStarted/Finished events.
     return self
 
@@ -165,15 +165,15 @@ class StatusEventLogger(StatusReceiverMultiService):
 
   def buildFinished(self, builderName, build, results):
     build_number = build.getNumber()
-    slave = build.getSlavename()
+    subordinate = build.getSubordinatename()
     self.log('buildFinished', '%s, %d, %s, %r',
-             builderName, build_number, slave, results)
+             builderName, build_number, subordinate, results)
 
   def builderRemoved(self, builderName):
     self.log('builderRemoved', '%s', builderName)
 
-  def slaveConnected(self, slaveName):
-    self.log('slaveConnected', '%s', slaveName)
+  def subordinateConnected(self, subordinateName):
+    self.log('subordinateConnected', '%s', subordinateName)
 
-  def slaveDisconnected(self, slaveName):
-    self.log('slaveDisconnected', '%s', slaveName)
+  def subordinateDisconnected(self, subordinateName):
+    self.log('subordinateDisconnected', '%s', subordinateName)

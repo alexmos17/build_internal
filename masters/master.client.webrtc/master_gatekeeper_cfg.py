@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import gatekeeper
-from master import master_utils
+from main import gatekeeper
+from main import main_utils
 
 # This is the list of the builder categories and the corresponding critical
 # steps. If one critical step fails, gatekeeper will close the tree
@@ -34,10 +34,10 @@ categories_steps = {
   ],
   'windows': ['svnkill', 'taskkill'],
   'compile': ['compile', 'archive_build'],
-  # Annotator scripts are triggered as a 'slave_steps' step.
+  # Annotator scripts are triggered as a 'subordinate_steps' step.
   # The gatekeeper currently does not recognize failure in a
   # @@@BUILD_STEP@@@, so we must match on the buildbot-defined step.
-  'android': ['slave_steps'],
+  'android': ['subordinate_steps'],
 }
 
 exclusions = {
@@ -46,19 +46,19 @@ exclusions = {
 forgiving_steps = ['update_scripts', 'update', 'svnkill', 'taskkill',
                    'archive_build', 'start_crash_handler', 'gclient_revert']
 
-def Update(config, active_master, c):
-  lookup = master_utils.FilterDomain(
-      domain=active_master.master_domain,
-      permitted_domains=active_master.permitted_domains)
+def Update(config, active_main, c):
+  lookup = main_utils.FilterDomain(
+      domain=active_main.main_domain,
+      permitted_domains=active_main.permitted_domains)
 
   c['status'].append(gatekeeper.GateKeeper(
-      fromaddr=active_master.from_address,
+      fromaddr=active_main.from_address,
       categories_steps=categories_steps,
       exclusions=exclusions,
-      relayhost=config.Master.smtp,
+      relayhost=config.Main.smtp,
       subject='buildbot %(result)s in %(projectName)s on %(builder)s, '
               'revision %(revision)s',
-      extraRecipients=active_master.tree_closing_notification_recipients,
+      extraRecipients=active_main.tree_closing_notification_recipients,
       lookup=lookup,
       forgiving_steps=forgiving_steps,
-      tree_status_url=active_master.tree_status_url))
+      tree_status_url=active_main.tree_status_url))

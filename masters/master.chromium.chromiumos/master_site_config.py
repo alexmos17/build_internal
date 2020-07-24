@@ -2,15 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
-class ChromiumChromiumOS(Master.Master1):
+class ChromiumChromiumOS(Main.Main1):
   project_name = 'Chromium ChromiumOS'
-  master_port = 8052
-  slave_port = 8152
-  master_port_alt = 8252
+  main_port = 8052
+  subordinate_port = 8152
+  main_port_alt = 8252
   alternate_tree_closing_notification_recipients = [
       'chromeos-build-failures@google.com']
   alternate_tree_status_url = 'https://chromiumos-status.appspot.com'

@@ -2,14 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition for master.client.polymer."""
+"""ActiveMain definition for main.client.polymer."""
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
-class Polymer(Master.Master3):
+class Polymer(Main.Main3):
   project_name = 'Polymer'
   project_url = 'http://github.com/Polymer/'
-  master_port = 8044
-  slave_port = 8144
-  master_port_alt = 8244
+  main_port = 8044
+  subordinate_port = 8144
+  main_port_alt = 8244
   buildbot_url = 'http://build.chromium.org/p/client.polymer/'

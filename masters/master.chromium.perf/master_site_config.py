@@ -2,13 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""ActiveMaster definition."""
+"""ActiveMain definition."""
 
-from config_bootstrap import Master
+from config_bootstrap import Main
 
-class ChromiumPerf(Master.Master1):
+class ChromiumPerf(Main.Main1):
   project_name = 'Chromium Perf'
-  master_port = 8013
-  slave_port = 8113
-  master_port_alt = 8213
+  main_port = 8013
+  subordinate_port = 8113
+  main_port_alt = 8213
   buildbot_url = 'http://build.chromium.org/p/chromium.perf/'

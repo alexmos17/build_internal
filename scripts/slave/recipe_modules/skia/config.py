@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from slave.recipe_config import config_item_context, ConfigGroup
-from slave.recipe_config import Dict, Set, Single, Static
-from slave.recipe_config_types import Path
+from subordinate.recipe_config import config_item_context, ConfigGroup
+from subordinate.recipe_config import Dict, Set, Single, Static
+from subordinate.recipe_config_types import Path
 
 from common.skia import builder_name_schema
-from . import slaves_cfg
+from . import subordinates_cfg
 
 
 CONFIG_DEBUG = 'Debug'
@@ -31,7 +31,7 @@ def BaseConfig(BUILDER_NAME, MASTER_NAME, SLAVE_NAME, **_kwargs):
     ),
     is_trybot = Single(bool),
     role = Single(str),
-    slave_cfg = Single(dict)
+    subordinate_cfg = Single(dict)
   )
 
 
@@ -170,6 +170,6 @@ def skia(c):
                       c.configuration == CONFIG_DEBUG) or
                      'Valgrind' in c.BUILDER_NAME)
   c.gyp_env.GYP_DEFINES.update(gyp_defs_from_builder_dict(c.builder_cfg))
-  c.slave_cfg = slaves_cfg.get(c.MASTER_NAME)[c.SLAVE_NAME]
+  c.subordinate_cfg = subordinates_cfg.get(c.MASTER_NAME)[c.SLAVE_NAME]
   c.is_trybot = builder_name_schema.IsTrybot(c.BUILDER_NAME)
 

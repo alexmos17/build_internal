@@ -4,7 +4,7 @@
 
 import types
 
-from slave.recipe_config import config_item_context, ConfigGroup, Single
+from subordinate.recipe_config import config_item_context, ConfigGroup, Single
 from RECIPE_MODULES.syzygy import api as syzygy_api
 
 

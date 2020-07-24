@@ -13,7 +13,7 @@ import ntpath
 import posixpath
 import re
 
-from buildbot.locks import SlaveLock
+from buildbot.locks import SubordinateLock
 from buildbot.process.properties import WithProperties
 from buildbot.status.builder import SUCCESS
 from buildbot.steps import shell
@@ -24,9 +24,9 @@ from twisted.python import log
 from common import chromium_utils
 import config
 
-from master import chromium_step
-from master.log_parser import retcode_command
-from master.optional_arguments import ListProperties
+from main import chromium_step
+from main.log_parser import retcode_command
+from main.optional_arguments import ListProperties
 
 
 # DEFAULT_TESTS is a marker to specify that the default tests should be run for
@@ -69,7 +69,7 @@ def CreateTriggerStep(trigger_name, trigger_set_properties=None,
           WithProperties('%(got_swarming_client_revision:-)s'),
       'parent_revision': WithProperties('%(revision:-)s'),
       'parent_scheduler': WithProperties('%(scheduler:-)s'),
-      'parent_slavename': WithProperties('%(slavename:-)s'),
+      'parent_subordinatename': WithProperties('%(subordinatename:-)s'),
       'parent_builddir': WithProperties('%(builddir:-)s'),
       'parent_try_job_key': WithProperties('%(try_job_key:-)s'),
       'issue': WithProperties('%(issue:-)s'),
@@ -83,7 +83,7 @@ def CreateTriggerStep(trigger_name, trigger_set_properties=None,
       'parent_cr_revision': WithProperties('%(got_revision:-)s'),
       'parent_wk_revision': WithProperties('%(got_webkit_revision:-)s'),
       'parentname': WithProperties('%(buildername)s'),
-      'parentslavename': WithProperties('%(slavename:-)s'),
+      'parentsubordinatename': WithProperties('%(subordinatename:-)s'),
   }
 
   set_properties.update(trigger_set_properties)
@@ -150,7 +150,7 @@ class RunHooksShell(shell.ShellCommand):
       environ['GYP_DEFINES'] += ' test_isolation_mode=archive'
       # TODO(maruel): Set it to be a factory property?
       environ['GYP_DEFINES'] += (' test_isolation_outdir=' +
-                                 config.Master.swarm_hashtable_server_internal)
+                                 config.Main.swarm_hashtable_server_internal)
 
       cmd.args['env'] = environ
 
@@ -250,9 +250,9 @@ class CompileWithRequiredSwarmTargets(shell.Compile):
 
 class FactoryCommands(object):
   # Use this to prevent steps which cannot be run on the same
-  # slave from being done together (in the case where slaves are
+  # subordinate from being done together (in the case where subordinates are
   # shared by multiple builds).
-  slave_exclusive_lock = SlaveLock('slave_exclusive', maxCount=1)
+  subordinate_exclusive_lock = SubordinateLock('subordinate_exclusive', maxCount=1)
 
   # --------------------------------------------------------------------------
   # PERF TEST SETTINGS
@@ -312,14 +312,14 @@ class FactoryCommands(object):
 
   def __init__(self, factory=None, target=None, build_dir=None,
                target_platform=None, target_arch=None, repository_root='src'):
-    """Initializes the SlaveCommands class.
+    """Initializes the SubordinateCommands class.
     Args:
       factory: BuildFactory to configure.
       target: Build configuration, case-sensitive; probably 'Debug' or
           'Release'
       build_dir: name of the directory within the buildbot working directory
         in which the solution, Debug, and Release directories are found.
-      target_platform: Slave's OS.
+      target_platform: Subordinate's OS.
       repository_root: Relative root directory of the sources (e.g. 'src' for
         Chromium or 'v8' for stand-alone v8)
     """
@@ -330,12 +330,12 @@ class FactoryCommands(object):
     self._target_platform = target_platform
     self._target_arch = target_arch
 
-    # Starting from e.g. C:\b\build\slave\build_slave_path\build, find
-    # C:\b\build\scripts\slave.
-    self._script_dir = self.PathJoin('..', '..', '..', 'scripts', 'slave')
+    # Starting from e.g. C:\b\build\subordinate\build_subordinate_path\build, find
+    # C:\b\build\scripts\subordinate.
+    self._script_dir = self.PathJoin('..', '..', '..', 'scripts', 'subordinate')
     self._private_script_dir = self.PathJoin(self._script_dir, '..', '..', '..',
                                              'build_internal', 'scripts',
-                                             'slave')
+                                             'subordinate')
 
     self._perl = self.GetExecutableName('perl')
 
@@ -343,7 +343,7 @@ class FactoryCommands(object):
       # Steps run using a separate copy of python.exe, so it can be killed at
       # the start of a build. But the kill_processes (taskkill) step has to use
       # the original python.exe, or it kills itself.
-      self._python = 'python_slave'
+      self._python = 'python_subordinate'
     else:
       self._python = 'python'
 
@@ -377,7 +377,7 @@ class FactoryCommands(object):
     # chrome_staging directory, relative to the build directory.
     self._staging_dir = self.PathJoin('..', 'chrome_staging')
 
-    # scripts in scripts/slave
+    # scripts in scripts/subordinate
     self._runbuild = self.PathJoin(self._script_dir, 'runbuild.py')
 
   # Util methods.
@@ -694,7 +694,7 @@ class FactoryCommands(object):
 
     if generate_json:
       # test_result_dir (-o) specifies where we put the JSON output locally
-      # on slaves.
+      # on subordinates.
       test_result_dir = 'gtest-results/%s' % test_name
       cmd.extend(['--generate-json-file',
                   '-o', test_result_dir,
@@ -727,7 +727,7 @@ class FactoryCommands(object):
 
   def AddBuildStep(self, factory_properties, name='build', env=None,
                    timeout=6000):
-    """Add annotated step to use the buildrunner to run steps on the slave."""
+    """Add annotated step to use the buildrunner to run steps on the subordinate."""
 
     factory_properties['target'] = self._target
 
@@ -826,7 +826,7 @@ class FactoryCommands(object):
 
   def AddUpdateScriptStep(self, gclient_jobs=None, solutions=None):
     """Adds a step to the factory to update the script folder."""
-    # This will be run in the '..' directory to udpate the slave's own script
+    # This will be run in the '..' directory to udpate the subordinate's own script
     # checkout.
     command = [chromium_utils.GetGClientCommand(self._target_platform),
                'sync', '--verbose', '--force']
@@ -839,7 +839,7 @@ class FactoryCommands(object):
     self._factory.addStep(shell.ShellCommand,
                           name='update_scripts',
                           description='update_scripts',
-                          locks=[self.slave_exclusive_lock],
+                          locks=[self.subordinate_exclusive_lock],
                           timeout=60*5,
                           workdir='../../..',
                           flunkOnFailure=False,
@@ -868,7 +868,7 @@ class FactoryCommands(object):
         workdir=self.working_dir,
         mode='update',
         env=env,
-        locks=[self.slave_exclusive_lock],
+        locks=[self.subordinate_exclusive_lock],
         retry=(60*5, 4),  # Try 4+1=5 more times, 5 min apart
         timeout=timeout,
         gclient_jobs=gclient_jobs,
@@ -889,7 +889,7 @@ class FactoryCommands(object):
     - There is no patch attached
 
     Args:
-      timeout: Timeout to use on the slave when running apply_issue.py.
+      timeout: Timeout to use on the subordinate when running apply_issue.py.
       server: The Rietveld server to grab the patch from.
     """
 
@@ -989,7 +989,7 @@ class FactoryCommands(object):
         v8_revision = (properties.getProperty('parent_got_v8_revision') or
                        properties.getProperty('revision') or 'HEAD')
         lkgr = 'lkgr'
-        # HACK(hinoka): master.client.v8 sets this URL in the gclient
+        # HACK(hinoka): main.client.v8 sets this URL in the gclient
         #               spec to indicate it wants to sync to lkcr, we use this
         #               signal to sync to origin/lkcr.
         if ('https://build.chromium.org/p/chromium/lkcr-status/lkgr'
@@ -1017,13 +1017,13 @@ class FactoryCommands(object):
         'root': '%(root:-)s',
         'issue': '%(issue:-)s',
         'patchset': '%(patchset:-)s',
-        'master': '%(mastername:-)s',
+        'main': '%(mainname:-)s',
         'revision': {
             'fmtstring': '%(resolved_revision:-)s',
             'resolved_revision': rev_factory(blink_config, gclient_specs)
         },
         'patch_url': '%(patch_url:-)s',
-        'slave_name': '%(slavename:-)s',
+        'subordinate_name': '%(subordinatename:-)s',
         'builder_name': '%(buildername:-)s',
     }
 
@@ -1077,7 +1077,7 @@ class FactoryCommands(object):
         name='runhooks',
         description='gclient hooks',
         env=env,
-        locks=[self.slave_exclusive_lock],
+        locks=[self.subordinate_exclusive_lock],
         timeout=timeout,
         command=cmd)
 
@@ -1267,7 +1267,7 @@ class FactoryCommands(object):
     """Adds a step to generate the .isolated files hashes.
 
     This is used by swarming to download the dependent files on the swarming
-    slave via run_isolated.py.
+    subordinate via run_isolated.py.
     """
     if not self._target:
       log.msg('No target specified, unable to find result files to '
@@ -1310,13 +1310,13 @@ class FactoryCommands(object):
                           timeout=600,
                           description='Updating and building clang and plugins',
                           descriptionDone='clang updated',
-                          env={'LLVM_URL': config.Master.llvm_url},
+                          env={'LLVM_URL': config.Main.llvm_url},
                           command=cmd)
 
-  def AddDownloadFileStep(self, mastersrc, slavedest, halt_on_failure):
-    """Download a file from master."""
+  def AddDownloadFileStep(self, mainsrc, subordinatedest, halt_on_failure):
+    """Download a file from main."""
     self._factory.addStep(
-        FileDownload(mastersrc=mastersrc, slavedest=slavedest,
+        FileDownload(mainsrc=mainsrc, subordinatedest=subordinatedest,
                      haltOnFailure=halt_on_failure))
 
   def AddDiagnoseGomaStep(self):

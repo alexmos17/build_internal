@@ -4,7 +4,7 @@
 
 import copy
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 
 # Different types of builds this recipe module can do.
@@ -105,18 +105,18 @@ RECIPE_CONFIGS = {
 
 
 class ChromiumTestsApi(recipe_api.RecipeApi):
-  def sync_and_configure_build(self, mastername, buildername,
+  def sync_and_configure_build(self, mainname, buildername,
                                override_bot_type=None, enable_swarming=False):
     # Make an independent copy so that we don't overwrite global state
     # with updates made dynamically based on the test specs.
-    master_dict = copy.deepcopy(self.m.chromium.builders.get(mastername, {}))
+    main_dict = copy.deepcopy(self.m.chromium.builders.get(mainname, {}))
 
-    bot_config = master_dict.get('builders', {}).get(buildername)
-    master_config = master_dict.get('settings', {})
+    bot_config = main_dict.get('builders', {}).get(buildername)
+    main_config = main_dict.get('settings', {})
     recipe_config_name = bot_config['recipe_config']
     assert recipe_config_name, (
-        'Unrecognized builder name %r for master %r.' % (
-            buildername, mastername))
+        'Unrecognized builder name %r for main %r.' % (
+            buildername, mainname))
     recipe_config = RECIPE_CONFIGS[recipe_config_name]
 
     self.m.chromium.set_config(
@@ -184,7 +184,7 @@ class ChromiumTestsApi(recipe_api.RecipeApi):
       self.m.chromium.runhooks(env=bot_config.get('runhooks_env', {}))
 
     test_spec_file = bot_config.get('testing', {}).get('test_spec_file',
-                                                       '%s.json' % mastername)
+                                                       '%s.json' % mainname)
     test_spec_path = self.m.path['checkout'].join('testing', 'buildbot',
                                                test_spec_file)
     # TODO(phajdan.jr): Bots should have no generators instead.
@@ -198,21 +198,21 @@ class ChromiumTestsApi(recipe_api.RecipeApi):
       test_spec_result.presentation.step_text = 'path: %s' % test_spec_path
       test_spec = test_spec_result.json.output
 
-    for loop_buildername, builder_dict in master_dict.get(
+    for loop_buildername, builder_dict in main_dict.get(
         'builders', {}).iteritems():
       builder_dict.setdefault('tests', [])
       for generator in builder_dict.get('test_generators', []):
         builder_dict['tests'] = (
-            list(generator(self.m, mastername, loop_buildername, test_spec,
+            list(generator(self.m, mainname, loop_buildername, test_spec,
                            enable_swarming=enable_swarming)) +
             builder_dict['tests'])
 
-    return update_step, master_dict, test_spec
+    return update_step, main_dict, test_spec
 
-  def compile(self, mastername, buildername, update_step, master_dict,
+  def compile(self, mainname, buildername, update_step, main_dict,
               test_spec, override_bot_type=None, override_tests=None):
-    bot_config = master_dict.get('builders', {}).get(buildername)
-    master_config = master_dict.get('settings', {})
+    bot_config = main_dict.get('builders', {}).get(buildername)
+    main_config = main_dict.get('settings', {})
     bot_type = override_bot_type or bot_config.get('bot_type', 'builder_tester')
 
     tests = bot_config.get('tests', [])
@@ -226,7 +226,7 @@ class ChromiumTestsApi(recipe_api.RecipeApi):
     if bot_type in ['builder', 'builder_tester']:
       compile_targets = set(bot_config.get('compile_targets', []))
       tests_including_triggered = tests[:]
-      for loop_buildername, builder_dict in master_dict.get(
+      for loop_buildername, builder_dict in main_dict.get(
           'builders', {}).iteritems():
         if builder_dict.get('parent_buildername') == buildername:
           for test in builder_dict.get('tests', []):
@@ -252,32 +252,32 @@ class ChromiumTestsApi(recipe_api.RecipeApi):
     got_revision = update_step.presentation.properties['got_revision']
 
     if bot_type == 'builder':
-      if mastername == 'chromium.linux':
+      if mainname == 'chromium.linux':
         # TODO(samuong): This is restricted to Linux for now until I have more
         # confidence that it is not totally broken.
         self.m.archive.archive_dependencies(
             'archive dependencies',
             self.m.chromium.c.build_config_fs,
-            mastername,
+            mainname,
             buildername,
             self.m.properties.get('buildnumber'))
       self.m.archive.zip_and_upload_build(
           'package build',
           self.m.chromium.c.build_config_fs,
           self.m.archive.legacy_upload_url(
-              master_config.get('build_gs_bucket'),
-              extra_url_components=(None if mastername == 'chromium.perf' else
-                                    self.m.properties['mastername'])),
+              main_config.get('build_gs_bucket'),
+              extra_url_components=(None if mainname == 'chromium.perf' else
+                                    self.m.properties['mainname'])),
           build_revision=got_revision,
           cros_board=self.m.chromium.c.TARGET_CROS_BOARD,
       )
 
-  def tests_for_builder(self, mastername, buildername, update_step, master_dict,
+  def tests_for_builder(self, mainname, buildername, update_step, main_dict,
                         override_bot_type=None):
     got_revision = update_step.presentation.properties['got_revision']
 
-    bot_config = master_dict.get('builders', {}).get(buildername)
-    master_config = master_dict.get('settings', {})
+    bot_config = main_dict.get('builders', {}).get(buildername)
+    main_config = main_dict.get('settings', {})
 
     bot_type = override_bot_type or bot_config.get('bot_type', 'builder_tester')
 
@@ -297,9 +297,9 @@ class ChromiumTestsApi(recipe_api.RecipeApi):
         'extract build',
         self.m.chromium.c.build_config_fs,
         self.m.archive.legacy_download_url(
-          master_config.get('build_gs_bucket'),
-          extra_url_components=(None if mastername == 'chromium.perf' else
-           self.m.properties['mastername'])),
+          main_config.get('build_gs_bucket'),
+          extra_url_components=(None if mainname == 'chromium.perf' else
+           self.m.properties['mainname'])),
         build_revision=self.m.properties.get(
           'parent_got_revision', got_revision),
         build_archive_url=self.m.properties.get('parent_build_archive_url'),

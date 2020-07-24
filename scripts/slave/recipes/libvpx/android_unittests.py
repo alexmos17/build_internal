@@ -36,7 +36,7 @@ def GenSteps(api):
   api.step.auto_resolve_conflicts = True
 
   # Paths and other constants
-  build_root = api.path['slave_build']
+  build_root = api.path['subordinate_build']
 
   # Android tools DEPS
   android_tools_root = build_root.join('android_tools')
@@ -97,7 +97,7 @@ def GenSteps(api):
 
   api.python(
       'transfer_files',
-      api.path['build'].join('scripts', 'slave', 'android',
+      api.path['build'].join('scripts', 'subordinate', 'android',
                              'transfer_files.py'),
       args=[adb, DEVICE_ROOT, test_data])
 
@@ -168,8 +168,8 @@ def GenTests(api):
     api.test('basic_linux_64') +
     api.properties(
         libvpx_git_url='https://chromium.googlesource.com/webm/libvpx',
-        slavename='libvpx-bot', buildername='Nexus 5 Builder',
-        mastername='client.libvpx', buildnumber='75') +
+        subordinatename='libvpx-bot', buildername='Nexus 5 Builder',
+        mainname='client.libvpx', buildnumber='75') +
     api.step_data('adb_wrap',
         api.raw_io.output("This is text with json inside normally")) +
     api.step_data('scrape_logs', api.json.output(

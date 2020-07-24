@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from master import master_config
-from master.factory import syzygy_factory
+from main import main_config
+from main.factory import syzygy_factory
 
 defaults = { 'category': 'continuous' }
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 D = helper.Dependent
 F = helper.Factory
@@ -47,5 +47,5 @@ B('Syzygy Coverage', 'f_syzygy_win_cov', scheduler='syzygy_cont',
 F('f_syzygy_win_cov', win().SyzygyCoverageFactory(target='coverage'))
 
 
-def Update(config, active_master, c):
+def Update(config, active_main, c):
   return helper.Update(c)

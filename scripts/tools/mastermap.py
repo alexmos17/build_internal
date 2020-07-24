@@ -3,14 +3,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Tool for viewing masters, their hosts and their ports.
+"""Tool for viewing mains, their hosts and their ports.
 
 Has two main modes:
-  a) In normal mode, simply prints the list of all known masters, sorted by
+  a) In normal mode, simply prints the list of all known mains, sorted by
      hostname, along with their associated ports, for the perusal of the user.
-  b) In --audit mode, tests to make sure that no masters conflict/overlap on
-     ports (even on different masters) and that no masters have unexpected
-     ports (i.e. differences of more than 100 between master, slave, and alt).
+  b) In --audit mode, tests to make sure that no mains conflict/overlap on
+     ports (even on different mains) and that no mains have unexpected
+     ports (i.e. differences of more than 100 between main, subordinate, and alt).
      Audit mode returns non-zero error code if conflicts are found. In audit
      mode, --verbose causes it to print human-readable output as well.
 
@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'scripts'))
 sys.path.insert(0, os.path.join(BASE_DIR, 'site_config'))
 
 import config_bootstrap
-from slave import bootstrap
+from subordinate import bootstrap
 
 # These are ports likely to be running on a developer's machine, which may break
 # presubmit tests.
@@ -45,14 +45,14 @@ PORT_BLACKLIST = set([
 def get_args():
   """Process command-line arguments."""
   parser = optparse.OptionParser(
-      description='Tool to list all masters along with their hosts and ports.')
+      description='Tool to list all mains along with their hosts and ports.')
 
   parser.add_option('-l', '--list', action='store_true', default=False,
-                    help='Output a list of all ports in use by all masters. '
+                    help='Output a list of all ports in use by all mains. '
                          'Default behavior if no other options are given.')
   parser.add_option('--sort-by', action='store',
                     help='Define the primary key by which rows are sorted. '
-                    'Possible values are: "port", "alt_port", "slave_port", '
+                    'Possible values are: "port", "alt_port", "subordinate_port", '
                     '"host", and "name". Only one value is allowed (for now).')
   parser.add_option('--find', action='store', type='int', default=0,
                     metavar='N',
@@ -69,7 +69,7 @@ def get_args():
   parser.add_option('--json', action='store_true', default=False,
                     help='Print output in JSON format. Overrides --csv.')
   parser.add_option('--full-host-names', action='store_true', default=False,
-                    help='Refrain from truncating the master host names')
+                    help='Refrain from truncating the main host names')
 
   opts, _ = parser.parse_args()
 
@@ -137,44 +137,44 @@ def csv_print(lines, verbose):
     print('\n')
 
 
-def master_map(masters, output, opts):
-  """Display a list of masters and their associated hosts and ports."""
+def main_map(mains, output, opts):
+  """Display a list of mains and their associated hosts and ports."""
 
-  lines = [['Master', 'Config Dir', 'Host', 'Web port', 'Slave port',
+  lines = [['Main', 'Config Dir', 'Host', 'Web port', 'Subordinate port',
             'Alt port', 'MSC', 'URL']]
-  for master in masters:
+  for main in mains:
     lines.append([
-        master['name'], master['dirname'], master['host'], master['port'],
-        master['slave_port'], master['alt_port'], master['msc'],
-        master['buildbot_url']])
+        main['name'], main['dirname'], main['host'], main['port'],
+        main['subordinate_port'], main['alt_port'], main['msc'],
+        main['buildbot_url']])
 
   output(lines, opts.verbose)
 
 
-def master_audit(masters, output, opts):
-  """Check for port conflicts and misconfigurations on masters.
+def main_audit(mains, output, opts):
+  """Check for port conflicts and misconfigurations on mains.
 
-  Outputs lists of masters whose ports conflict and who have misconfigured
+  Outputs lists of mains whose ports conflict and who have misconfigured
   ports. If any misconfigurations are found, returns a non-zero error code.
   """
   # Return value. Will be set to 1 the first time we see an error.
   ret = 0
 
-  # Look for masters configured to use the same ports.
+  # Look for mains configured to use the same ports.
   web_ports = {}
-  slave_ports = {}
+  subordinate_ports = {}
   alt_ports = {}
   all_ports = {}
-  for master in masters:
-    web_ports.setdefault(master['port'], []).append(master)
-    slave_ports.setdefault(master['slave_port'], []).append(master)
-    alt_ports.setdefault(master['alt_port'], []).append(master)
+  for main in mains:
+    web_ports.setdefault(main['port'], []).append(main)
+    subordinate_ports.setdefault(main['subordinate_port'], []).append(main)
+    alt_ports.setdefault(main['alt_port'], []).append(main)
 
-    for port_type in ('port', 'slave_port', 'alt_port'):
-      all_ports.setdefault(master[port_type], []).append(master)
+    for port_type in ('port', 'subordinate_port', 'alt_port'):
+      all_ports.setdefault(main[port_type], []).append(main)
 
   # Check for blacklisted ports.
-  lines = [['Blacklisted port', 'Master', 'Host']]
+  lines = [['Blacklisted port', 'Main', 'Host']]
   for port, lst in all_ports.iteritems():
     if port in PORT_BLACKLIST:
       for m in lst:
@@ -182,7 +182,7 @@ def master_audit(masters, output, opts):
   output(lines, opts.verbose)
 
   # Check for conflicting web ports.
-  lines = [['Web port', 'Master', 'Host']]
+  lines = [['Web port', 'Main', 'Host']]
   for port, lst in web_ports.iteritems():
     if len(lst) > 1:
       ret = 1
@@ -190,9 +190,9 @@ def master_audit(masters, output, opts):
         lines.append([port, m['name'], m['host']])
   output(lines, opts.verbose)
 
-  # Check for conflicting slave ports.
-  lines = [['Slave port', 'Master', 'Host']]
-  for port, lst in slave_ports.iteritems():
+  # Check for conflicting subordinate ports.
+  lines = [['Subordinate port', 'Main', 'Host']]
+  for port, lst in subordinate_ports.iteritems():
     if len(lst) > 1:
       ret = 1
       for m in lst:
@@ -200,7 +200,7 @@ def master_audit(masters, output, opts):
   output(lines, opts.verbose)
 
   # Check for conflicting alt ports.
-  lines = [['Alt port', 'Master', 'Host']]
+  lines = [['Alt port', 'Main', 'Host']]
   for port, lst in alt_ports.iteritems():
     if len(lst) > 1:
       ret = 1
@@ -208,25 +208,25 @@ def master_audit(masters, output, opts):
         lines.append([port, m['name'], m['host']])
   output(lines, opts.verbose)
 
-  # Look for masters whose port, slave_port, alt_port aren't separated by 100.
-  lines = [['Master', 'Host', 'Web port', 'Slave port', 'Alt port']]
-  for master in masters:
-    if (getint(master['slave_port']) - getint(master['port']) != 100 or
-        getint(master['alt_port']) - getint(master['slave_port']) != 100):
+  # Look for mains whose port, subordinate_port, alt_port aren't separated by 100.
+  lines = [['Main', 'Host', 'Web port', 'Subordinate port', 'Alt port']]
+  for main in mains:
+    if (getint(main['subordinate_port']) - getint(main['port']) != 100 or
+        getint(main['alt_port']) - getint(main['subordinate_port']) != 100):
       ret = 1
-      lines.append([master['name'], master['host'],
-                   master['port'], master['slave_port'], master['alt_port']])
+      lines.append([main['name'], main['host'],
+                   main['port'], main['subordinate_port'], main['alt_port']])
   output(lines, opts.verbose)
 
   return ret
 
 
-def find_port(masters, output, opts):
+def find_port(mains, output, opts):
   """Lists triplets of available ports for easy discoverability."""
   ports = set()
-  for master in masters:
-    for port in ('port', 'slave_port', 'alt_port'):
-      ports.add(master[port])
+  for main in mains:
+    for port in ('port', 'subordinate_port', 'alt_port'):
+      ports.add(main[port])
 
   # Remove 0 from the set.
   ports = ports - {0}
@@ -234,7 +234,7 @@ def find_port(masters, output, opts):
   # Add blacklisted ports.
   ports = ports | PORT_BLACKLIST
 
-  lines = [['Web port', 'Slave port', 'Alt port']]
+  lines = [['Web port', 'Subordinate port', 'Alt port']]
   # In case we've hit saturation, search one past the end of the port list.
   for port in xrange(min(ports), max(ports) + 2):
     if (port not in ports and
@@ -254,44 +254,44 @@ def format_host_name(host):
   return host
 
 
-def extract_masters(masters):
-  """Extracts the data we want from a collection of possibly-masters."""
-  good_masters = []
-  for master_name, master in masters.iteritems():
-    if not hasattr(master, 'master_port'):
-      # Not actually a master
+def extract_mains(mains):
+  """Extracts the data we want from a collection of possibly-mains."""
+  good_mains = []
+  for main_name, main in mains.iteritems():
+    if not hasattr(main, 'main_port'):
+      # Not actually a main
       continue
-    host = getattr(master, 'master_host', '')
-    good_masters.append({
-        'name': master_name,
+    host = getattr(main, 'main_host', '')
+    good_mains.append({
+        'name': main_name,
         'host': host,
-        'port': getattr(master, 'master_port', 0),
-        'slave_port': getattr(master, 'slave_port', 0),
-        'alt_port': getattr(master, 'master_port_alt', 0),
-        'buildbot_url': getattr(master, 'buildbot_url', ''),
-        'dirname': os.path.basename(getattr(master, 'local_config_path', ''))
+        'port': getattr(main, 'main_port', 0),
+        'subordinate_port': getattr(main, 'subordinate_port', 0),
+        'alt_port': getattr(main, 'main_port_alt', 0),
+        'buildbot_url': getattr(main, 'buildbot_url', ''),
+        'dirname': os.path.basename(getattr(main, 'local_config_path', ''))
     })
-  return good_masters
+  return good_mains
 
 
 def real_main(include_internal=False):
   opts = get_args()
 
-  bootstrap.ImportMasterConfigs(include_internal=include_internal)
+  bootstrap.ImportMainConfigs(include_internal=include_internal)
 
-  # These are the masters that are configured in site_config/.
-  config_masters = extract_masters(
-      config_bootstrap.config_private.Master.__dict__)
-  for master in config_masters:
-    master['msc'] = ''
+  # These are the mains that are configured in site_config/.
+  config_mains = extract_mains(
+      config_bootstrap.config_private.Main.__dict__)
+  for main in config_mains:
+    main['msc'] = ''
 
-  # These are the masters that have their own master_site_config.
-  msc_masters = extract_masters(config_bootstrap.Master.__dict__)
-  for master in msc_masters:
-    master['msc'] = 'Y'
+  # These are the mains that have their own main_site_config.
+  msc_mains = extract_mains(config_bootstrap.Main.__dict__)
+  for main in msc_mains:
+    main['msc'] = 'Y'
 
   # Define sorting order
-  sort_keys = ['port', 'alt_port', 'slave_port', 'host', 'name']
+  sort_keys = ['port', 'alt_port', 'subordinate_port', 'host', 'name']
   # Move key specified on command-line to the front of the list
   if opts.sort_by is not None:
     try:
@@ -301,13 +301,13 @@ def real_main(include_internal=False):
     else:
       sort_keys.insert(0, sort_keys.pop(index))
 
-  sorted_masters = config_masters + msc_masters
+  sorted_mains = config_mains + msc_mains
   for key in reversed(sort_keys):
-    sorted_masters.sort(key = lambda m: m[key])
+    sorted_mains.sort(key = lambda m: m[key])
 
   if not opts.full_host_names:
-    for master in sorted_masters:
-      master['host'] = format_host_name(master['host'])
+    for main in sorted_mains:
+      main['host'] = format_host_name(main['host'])
 
   if opts.csv:
     printer = csv_print
@@ -316,17 +316,17 @@ def real_main(include_internal=False):
 
   if opts.list:
     if opts.json:
-      print json.dumps(sorted_masters,
+      print json.dumps(sorted_mains,
                        sort_keys=True, indent=2, separators=(',', ': '))
     else:
-      master_map(sorted_masters, printer, opts)
+      main_map(sorted_mains, printer, opts)
 
   ret = 0
   if opts.audit or opts.presubmit:
-    ret = master_audit(sorted_masters, printer, opts)
+    ret = main_audit(sorted_mains, printer, opts)
 
   if opts.find:
-    find_port(sorted_masters, printer, opts)
+    find_port(sorted_mains, printer, opts)
 
   return ret
 

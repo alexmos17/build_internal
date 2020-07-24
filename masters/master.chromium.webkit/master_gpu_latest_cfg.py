@@ -3,21 +3,21 @@
 # found in the LICENSE file.
 
 
-from master import master_config
-from master.factory import annotator_factory
+from main import main_config
+from main.factory import annotator_factory
 
 import collections
 
 defaults = {}
 
-helper = master_config.Helper(defaults)
+helper = main_config.Helper(defaults)
 B = helper.Builder
 F = helper.Factory
 T = helper.Triggerable
 
 # TODO(kbr): it would be better if this waterfall were refactored so
-# that we could access the slaves_list here.
-gpu_slave_info = [
+# that we could access the subordinates_list here.
+gpu_subordinate_info = [
   {
     'builder': 'GPU Win Builder',
     'factory_id': 'f_gpu_win_builder_rel',
@@ -130,18 +130,18 @@ trigger_map = collections.defaultdict(list)
 # trigger, wrapped in a list.
 trigger_name_map = {}
 next_group_id = 0
-# Note this code is very similar to that in recipe_master_helper.py.
+# Note this code is very similar to that in recipe_main_helper.py.
 # Unfortunately due to the different structure of this waterfall it's
 # impossible to share the code.
 def BuilderExists(builder_name):
-  for s in gpu_slave_info:
+  for s in gpu_subordinate_info:
     if s['builder'] == builder_name:
       return True
   return False
 
-for slave in gpu_slave_info:
-  builder = slave['builder']
-  parent_builder = slave.get('triggered_by')
+for subordinate in gpu_subordinate_info:
+  builder = subordinate['builder']
+  parent_builder = subordinate.get('triggered_by')
   if parent_builder is not None:
     if not BuilderExists(parent_builder):
       raise Exception('Could not find parent builder %s for builder %s' %
@@ -156,29 +156,29 @@ for trigger_name in trigger_name_map.values():
   T(trigger_name)
 
 # Set up bots
-for slave in gpu_slave_info:
+for subordinate in gpu_subordinate_info:
   factory_properties = {
     'test_results_server': 'test-results.appspot.com',
     'generate_gtest_json': True,
-    'build_config': slave['build_config'],
+    'build_config': subordinate['build_config'],
     'top_of_tree_blink': True
   }
-  if 'perf_id' in slave:
+  if 'perf_id' in subordinate:
     factory_properties['show_perf_results'] = True
-    factory_properties['perf_id'] = slave['perf_id']
-  name = slave['builder']
+    factory_properties['perf_id'] = subordinate['perf_id']
+  name = subordinate['builder']
   scheduler = 'global_scheduler'
-  if 'triggered_by' in slave:
-    scheduler = trigger_name_map[slave['triggered_by']]
+  if 'triggered_by' in subordinate:
+    scheduler = trigger_name_map[subordinate['triggered_by']]
   # The default for auto_reboot should match the setting in
-  # master_config.py.
-  auto_reboot = slave.get('auto_reboot', True)
-  B(name, slave['factory_id'], scheduler=scheduler, auto_reboot=auto_reboot)
-  F(slave['factory_id'], m_annotator.BaseFactory(
-    slave['recipe'],
+  # main_config.py.
+  auto_reboot = subordinate.get('auto_reboot', True)
+  B(name, subordinate['factory_id'], scheduler=scheduler, auto_reboot=auto_reboot)
+  F(subordinate['factory_id'], m_annotator.BaseFactory(
+    subordinate['recipe'],
     factory_properties,
     [trigger_name_map[name]] if name in trigger_name_map else None))
 
 
-def Update(_config, _active_master, c):
+def Update(_config, _active_main, c):
   return helper.Update(c)

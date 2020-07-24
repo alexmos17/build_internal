@@ -4,8 +4,8 @@
 
 import types
 
-from slave.recipe_config import config_item_context, ConfigGroup, BadConf
-from slave.recipe_config import ConfigList, Dict, Single, Static, Set, List
+from subordinate.recipe_config import config_item_context, ConfigGroup, BadConf
+from subordinate.recipe_config import ConfigList, Dict, Single, Static, Set, List
 
 from RECIPE_MODULES.gclient import api as gclient_api
 
@@ -340,7 +340,7 @@ def chromium_skia(c):
   c.solutions[0].revision = 'HEAD'
   del c.solutions[0].custom_deps
   c.revisions['src/third_party/skia'] = (
-      gclient_api.RevisionFallbackChain('origin/master'))
+      gclient_api.RevisionFallbackChain('origin/main'))
   c.got_revision_mapping['src'] = 'got_chromium_revision'
   c.got_revision_mapping['src/third_party/skia'] = 'got_revision'
   c.parent_got_revision_mapping['parent_got_revision'] = 'got_revision'

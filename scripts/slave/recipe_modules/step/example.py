@@ -7,7 +7,7 @@ DEPS = [
   'step',
 ]
 
-from slave import recipe_api
+from subordinate import recipe_api
 
 def GenSteps(api):
   # We are going to have steps with the same name, so fix it automagically.
